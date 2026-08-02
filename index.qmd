@@ -87,6 +87,9 @@ merge, then a single database from there:
 - [Distribution-Mixture Background](./background-mixture.qmd): separating a background
   population from an enriched one from the distribution alone, and checking it against
   the spatial background.
+- [Pristine Classification](./background-pristine.qmd): combining the background
+  estimates into a per-sample verdict, and where it cannot be made (the aquaculture
+  sites lack the aluminium needed).
 
 A multi-element pollution index may be added later.
 

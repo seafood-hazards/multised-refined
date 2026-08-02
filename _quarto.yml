@@ -34,6 +34,8 @@ website:
             href: background-ef.qmd
           - text: "Distribution-Mixture Background"
             href: background-mixture.qmd
+          - text: "Pristine Classification"
+            href: background-pristine.qmd
 
 format:
   html:
