@@ -1,0 +1,141 @@
+---
+title: "Background"
+subtitle: "Estimating a natural background concentration per element and fraction"
+---
+
+```{css, echo=FALSE}
+th { white-space: nowrap; }
+```
+
+A **background** concentration is what a sediment would carry without local human input,
+the baseline that concentrations elsewhere are judged against. There is no single way to
+define it, so this page sets out two complementary estimates for each element and
+fraction and compares them:
+
+- **(A) global distribution**: the percentiles of the value over all sites, the natural
+  range. The **90th percentile** (an approach used by EFSA) is one point on it.
+- **(B) offshore**: the same percentiles restricted to sites **far from the coast**
+  (more than `r 10` km). Local pressure, including aquaculture, is coastal, so an
+  offshore-only distribution is a cleaner background; comparing it to the global one
+  shows how much the coast lifts the numbers.
+
+Everything is on the **raw** value (mg/kg), split by fraction into **bulk**,
+**sieved63** (< 63 um) and **sieved20** (< 20 um), which are never pooled. Distributional
+outliers are dropped. Grain-size-normalised backgrounds (metal / Al, metal / Fe) are a
+later page.
+
+```{r}
+#| label: setup
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+bdir <- "data/refined_summary"
+rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
+                           check.names = FALSE)
+pct  <- rd("refined_background_percentiles.csv")
+cmp  <- rd("refined_background_compare.csv")
+meta <- rd("refined_background_meta.csv")
+
+elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
+cat_levels  <- c("bulk", "sieved63", "sieved20")
+pct$symbol <- factor(pct$symbol, levels = elem_levels)
+pct$cat    <- factor(pct$cat, levels = cat_levels)
+cmp$symbol <- factor(cmp$symbol, levels = elem_levels)
+cmp$cat    <- factor(cmp$cat, levels = cat_levels)
+BLUE <- "#4477AA"; RED <- "#EE6677"
+theme_set(theme_minimal(base_size = 12))
+```
+
+## A. The global range
+
+The spread of each element by fraction, drawn from the global percentiles (box = the 25th
+to 75th, line = median, whiskers = 10th to 90th). Reliable groups only (at least
+`r meta$min_n` values); iodine, and selenium in the sieved fractions, are too sparse to
+show.
+
+```{r}
+#| label: range-fig
+#| fig-cap: "Global distribution of each element by fraction (log scale): box is the interquartile range, whiskers the 10th to 90th percentiles. Sieved fractions concentrate metals above bulk."
+#| fig-width: 8.5
+#| fig-height: 4.6
+pct |>
+  filter(subset == "global", reliable) |>
+  ggplot(aes(cat)) +
+  geom_boxplot(aes(ymin = p10, lower = p25, middle = p50, upper = p75, ymax = p90,
+                   fill = cat), stat = "identity", width = 0.6) +
+  scale_y_log10() +
+  scale_fill_manual(values = c(bulk = "#4477AA", sieved63 = "#66CCEE",
+                               sieved20 = "#228833"), guide = "none") +
+  facet_wrap(~ symbol, scales = "free_y") +
+  labs(x = NULL, y = "concentration, mg/kg (log)")
+```
+
+The **90th percentile** per element and fraction, the EFSA-style background value:
+
+```{r}
+#| label: p90-table
+pct |>
+  filter(subset == "global", reliable) |>
+  transmute(Element = symbol, Fraction = cat, n, `median` = p50, `P90 (mg/kg)` = p90) |>
+  arrange(Element, Fraction) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+## B. Offshore versus global
+
+Restricting to offshore sites lowers the background where the coast adds metal, and
+leaves it unchanged where it does not. The ratio below is the offshore 90th percentile
+over the global one: **well under 1 means a strong coastal signal removed**.
+
+```{r}
+#| label: shift-fig
+#| fig-cap: "Offshore (>10 km) 90th percentile relative to the global 90th percentile. Below the dashed line, offshore is cleaner (coastal enrichment removed); at or above it, the coast is not the driver."
+#| fig-width: 8
+#| fig-height: 3.8
+cmp |>
+  filter(!is.na(shift_p90), n_off10 >= meta$min_n) |>
+  mutate(lab = paste(symbol, cat)) |>
+  ggplot(aes(shift_p90, reorder(lab, shift_p90))) +
+  geom_vline(xintercept = 1, linetype = "dashed", colour = "grey60") +
+  geom_col(aes(fill = shift_p90 < 1)) +
+  geom_text(aes(label = sprintf("%.2f", shift_p90)), hjust = -0.15, size = 3) +
+  scale_fill_manual(values = c(`TRUE` = BLUE, `FALSE` = RED), guide = "none") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.15))) +
+  labs(x = "offshore P90 / global P90", y = NULL)
+```
+
+Read together with the numbers, the picture is:
+
+- **Copper and zinc in bulk** drop sharply offshore (copper to about 0.4 of the global
+  value, zinc to about 0.6): a clear coastal enrichment, and the offshore figure is the
+  cleaner background for these.
+- **Manganese and cobalt in bulk** barely move, and **molybdenum rises** offshore: these
+  are redox-sensitive, enriched in deeper, oxygen-poor offshore muds by natural
+  geochemistry, not by the coast, so offshore is not automatically lower for them.
+- **The sieved fractions** hardly change offshore (ratios near or above 1): sieved
+  sampling is dominated by specific monitoring programmes rather than a clean
+  coast-to-offshore gradient, so the offshore filter does less for them.
+
+The sensitivity to the cutoff (10, 20, 50 km) is small for the strong signals:
+
+```{r}
+#| label: sensitivity-table
+cmp |>
+  filter(cat == "bulk", n_off10 >= meta$min_n) |>
+  transmute(Element = symbol, `global P90` = p90_global,
+            `>10 km` = p90_off10, `>20 km` = p90_off20, `>50 km` = p90_off50) |>
+  arrange(Element) |>
+  kable(caption = "Bulk 90th-percentile background (mg/kg) at three offshore cutoffs.")
+```
+
+::: {.callout-note}
+This is one family of background estimates, not the final answer. "Offshore" is a coarse
+proxy for pristine (a site a few km out in a pressured fjord is not clean, and a coastal
+site in a remote area may be), and the redox-sensitive elements show that a lower value is
+not always the more natural one. The 90th percentile is a conservative upper bound of the
+background, not a typical value. Later pages will add normalised backgrounds and pressure
+based definitions (distance to aquaculture, enrichment factors) to triangulate. Iodine and
+selenium have too few measurements for a reliable background, especially when sieved.
+:::

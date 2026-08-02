@@ -1,5 +1,6 @@
 project:
   type: website
+  pre-render: download_resources.R
 
 website:
   title: "multised (refined)"
@@ -14,6 +15,10 @@ website:
         href: index.qmd
       - text: "DB Schema"
         href: db-schema-refined.qmd
+      - text: "Analyses"
+        menu:
+          - text: "Background"
+            href: background.qmd
 
 format:
   html:
