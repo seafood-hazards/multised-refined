@@ -1,0 +1,99 @@
+---
+title: "Pressure-Based Background"
+subtitle: "Background from distance to aquaculture, and the near-cage enrichment"
+---
+
+```{css, echo=FALSE}
+th { white-space: nowrap; }
+```
+
+Instead of a spatial proxy for pristine, this page uses a direct **pressure gradient**:
+distance to the nearest aquaculture farm. Sites far from any farm are the low-pressure
+**background**; sites near the cages show the **enrichment**. This is the aquaculture
+question asked directly, and it is **Norway only** (the aquaculture reference is
+Norwegian).
+
+For each element and fraction, the value is summarised in distance-to-aquaculture bands
+(< 1 km, 1-5 km, 5-20 km, > 20 km). The **> 20 km** band is read as the background; the
+ratio of the nearest band to it (the 90th percentiles) is the near-cage enrichment.
+
+```{r}
+#| label: setup
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+bdir <- "data/refined_summary"
+rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
+                           check.names = FALSE)
+pp  <- rd("refined_pressure_percentiles.csv")
+pc  <- rd("refined_pressure_compare.csv")
+
+elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
+bin_levels  <- c("<1km", "1-5km", "5-20km", ">20km")
+pp$symbol <- factor(pp$symbol, levels = elem_levels)
+pp$aq_bin <- factor(pp$aq_bin, levels = bin_levels)
+theme_set(theme_minimal(base_size = 12))
+```
+
+## Concentration versus distance to aquaculture
+
+The 90th percentile by distance band, bulk (reliable groups only). A value that falls as
+distance grows is a pressure signal; the far band is the background.
+
+```{r}
+#| label: gradient-fig
+#| fig-cap: "Bulk 90th-percentile concentration by distance to the nearest aquaculture farm (log scale). Molybdenum, copper, zinc and selenium fall with distance (near-cage enrichment); manganese does not."
+#| fig-width: 8.5
+#| fig-height: 4.4
+pp |>
+  filter(cat == "bulk", reliable, symbol %in% c("CO","CU","MN","MO","SE","ZN")) |>
+  ggplot(aes(aq_bin, p90, group = symbol, colour = symbol)) +
+  geom_line(linewidth = 0.7) +
+  geom_point(size = 2) +
+  scale_y_log10() +
+  scale_colour_brewer(palette = "Dark2", name = NULL) +
+  labs(x = "distance to nearest aquaculture farm", y = "P90 concentration, mg/kg (log)")
+```
+
+## Near-cage enrichment
+
+The nearest-band (< 1 km) 90th percentile over the far background (> 20 km):
+
+```{r}
+#| label: enrich-table
+pc |>
+  filter(cat == "bulk", !is.na(enrich_near)) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Element = symbol,
+            `<1 km` = `<1km`, `>20 km (bg)` = `>20km`,
+            `enrichment (near/far)` = enrich_near) |>
+  arrange(desc(`enrichment (near/far)`)) |>
+  kable()
+```
+
+The elements that light up are the ones aquaculture would touch:
+
+- **Molybdenum** (about 13x) and **selenium** (about 5x): molybdenum accumulates in the
+  oxygen-poor, organic-rich sediment that builds up under cages, and selenium is a feed
+  additive, so both are strong near-cage signals.
+- **Copper** (about 3x): antifouling treatment of nets and cages.
+- **Zinc** (about 2x): feed and galvanised structures.
+- **Manganese** falls below 1 (near lower than far): it is diagenetic, not a pressure
+  signal, the same behaviour it showed offshore.
+
+Two cautions. The gradient is not always monotonic: the < 1 km band can sit *below* the
+1-20 km bands (the immediate footprint differs from the broader zone), so the enrichment
+ratio is a summary, not a dose-response curve. And near-cage sediment is often muddier and
+more organic, so part of the rise is grain size; the
+[Grain-Size-Normalised](./background-gsnorm.qmd) page is the cross-check (the molybdenum
+and selenium signals, being feed and redox driven, largely survive it).
+
+::: {.callout-note}
+This is Norway only, and "distance to a farm" is a coarse pressure measure (a distant but
+industrial site is not pristine; a near site in a well-flushed location may be clean). The
+> 20 km band is a practical low-pressure background, not a guaranteed pristine one. Read
+with the raw [Background](./background.qmd) and
+[Grain-Size-Normalised](./background-gsnorm.qmd) pages to triangulate.
+:::

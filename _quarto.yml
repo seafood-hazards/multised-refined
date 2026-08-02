@@ -19,6 +19,10 @@ website:
         menu:
           - text: "Background"
             href: background.qmd
+          - text: "Grain-Size-Normalised Background"
+            href: background-gsnorm.qmd
+          - text: "Pressure-Based Background"
+            href: background-pressure.qmd
 
 format:
   html:

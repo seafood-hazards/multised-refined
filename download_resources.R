@@ -10,7 +10,13 @@ dir.create(csv_dir, recursive = TRUE, showWarnings = FALSE)
 
 csvs <- c("refined_background_percentiles.csv",
           "refined_background_compare.csv",
-          "refined_background_meta.csv")
+          "refined_background_meta.csv",
+          "refined_gsnorm_percentiles.csv",
+          "refined_gsnorm_compare.csv",
+          "refined_gsnorm_meta.csv",
+          "refined_pressure_percentiles.csv",
+          "refined_pressure_compare.csv",
+          "refined_pressure_meta.csv")
 
 for (f in csvs) {
   dest <- file.path(csv_dir, f)

@@ -111,9 +111,12 @@ Read together with the numbers, the picture is:
 - **Copper and zinc in bulk** drop sharply offshore (copper to about 0.4 of the global
   value, zinc to about 0.6): a clear coastal enrichment, and the offshore figure is the
   cleaner background for these.
-- **Manganese and cobalt in bulk** barely move, and **molybdenum rises** offshore: these
-  are redox-sensitive, enriched in deeper, oxygen-poor offshore muds by natural
-  geochemistry, not by the coast, so offshore is not automatically lower for them.
+- **Manganese and cobalt in bulk** barely move (manganese flat, cobalt slightly lower),
+  so the coast is not their main driver. **Molybdenum** behaves differently by fraction:
+  in **bulk** it drops steeply offshore (P90 from about 18 to 3), reflecting enrichment
+  in coastal anoxic basins (restricted fjords) rather than on the open shelf, while in
+  the **sieved** fractions it rises. These redox-sensitive elements are a reminder that a
+  lower offshore value is not always the more natural one.
 - **The sieved fractions** hardly change offshore (ratios near or above 1): sieved
   sampling is dominated by specific monitoring programmes rather than a clean
   coast-to-offshore gradient, so the offshore filter does less for them.

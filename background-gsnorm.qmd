@@ -1,0 +1,106 @@
+---
+title: "Grain-Size-Normalised Background"
+subtitle: "Backgrounds after removing the grain-size effect, three ways"
+---
+
+```{css, echo=FALSE}
+th { white-space: nowrap; }
+```
+
+The raw [Background](./background.qmd) page mixes grain size in: muddy sediment carries
+more metal, and the coast tends to be muddier, so part of the coastal signal is grain
+size rather than pressure. Normalising to a grain-size proxy strips that out. Because the
+choice of proxy matters, this page does it **three ways** side by side, per element and
+fraction:
+
+- **metal / Al** (aluminium, the textbook lithogenic grain-size normaliser),
+- **metal / Fe** (iron, the secondary carrier),
+- **metal / mud** (the value per unit mud fraction, `value / (fines / 100)`), computed
+  only where the sample is at least `r 10`% mud, since dividing a sandy sample by a tiny
+  mud fraction is unstable.
+
+For each we compare the offshore (> 10 km) 90th percentile to the global one, exactly as
+the raw page did, so the **shift toward 1 shows how much of the coastal signal was grain
+size**.
+
+```{r}
+#| label: setup
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+bdir <- "data/refined_summary"
+rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
+                           check.names = FALSE)
+graw <- rd("refined_background_compare.csv")   # page 1 (raw)
+gs   <- rd("refined_gsnorm_compare.csv")        # this page (al / fe / fines)
+gsp  <- rd("refined_gsnorm_percentiles.csv")
+
+elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
+basis_levels <- c("raw", "al", "fe", "fines")
+theme_set(theme_minimal(base_size = 12))
+```
+
+## How much of the coastal signal is grain size?
+
+The offshore/global 90th-percentile shift, bulk, for the raw value and the three
+normalised bases. A shift near 1 means the offshore and global backgrounds agree (little
+left once that basis is accounted for); a shift well below 1 means a real reduction
+remains.
+
+```{r}
+#| label: shift-fig
+#| fig-cap: "Offshore/global P90 shift (bulk) for the raw value and the Al, Fe and mud normalisations. For copper, Al-normalising lifts the shift from 0.40 to 0.87: most of copper's apparent coastal enrichment was grain size. The bases disagree, most starkly for copper (Al 0.87 vs mud 0.15)."
+#| fig-width: 8
+#| fig-height: 4
+raw_b <- graw |> filter(cat == "bulk") |> transmute(symbol, basis = "raw", shift = shift_p90,
+                                                     n_off = n_off10)
+gs_b  <- gs |> filter(cat == "bulk") |> transmute(symbol, basis, shift = shift_p90, n_off)
+d <- bind_rows(raw_b, gs_b) |>
+  filter(!is.na(shift), n_off >= 30, symbol %in% c("CO","CU","MN","MO","ZN")) |>
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         basis = factor(basis, levels = basis_levels))
+
+ggplot(d, aes(shift, symbol, colour = basis)) +
+  geom_vline(xintercept = 1, linetype = "dashed", colour = "grey60") +
+  geom_point(size = 3, alpha = 0.85) +
+  scale_colour_manual(values = c(raw = "#BBBBBB", al = "#4477AA",
+                                 fe = "#66CCEE", fines = "#EE6677"), name = NULL) +
+  labs(x = "offshore P90 / global P90 (bulk)", y = NULL)
+```
+
+The lesson is twofold. **Aluminium-normalising explains most of copper's coastal signal**
+(the shift rises from 0.40 raw to 0.87), and lifts zinc's part way (0.59 to 0.74): a good
+share of what looked like coastal enrichment in the raw values was simply muddier coastal
+sediment. But **the three normalisers disagree**, sharply for copper (Al 0.87 says little
+real enrichment, mud 0.15 says a lot), because aluminium, iron and the mud percentage are
+not the same measure of grain size and cover different samples. So a normalised background
+is only as good as its normaliser, and no single one is definitive.
+
+## The normalised background values
+
+The 90th-percentile background per element and fraction on each basis (Al and Fe are
+dimensionless ratios; mud is mg/kg per unit mud fraction). Reliable groups only.
+
+```{r}
+#| label: bg-table
+gsp |>
+  filter(subset == "global", reliable) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  select(symbol, cat, basis, p90) |>
+  pivot_wider(names_from = basis, values_from = p90) |>
+  arrange(symbol, cat) |>
+  transmute(Element = symbol, Fraction = cat,
+            `metal/Al` = al, `metal/Fe` = fe, `metal/mud` = fines) |>
+  kable()
+```
+
+::: {.callout-note}
+Normalising helps but does not settle the background: it trades the grain-size assumption
+for a normaliser assumption. Aluminium is the most defensible single choice, but its bulk
+coverage is only about a third of the samples; the mud basis is the most direct grain-size
+measure but excludes sandy samples and is unstable at low mud. Read alongside the raw
+[Background](./background.qmd) and the [Pressure-Based Background](./background-pressure.qmd)
+pages, not on its own. Iodine and selenium remain too sparse to normalise reliably.
+:::
