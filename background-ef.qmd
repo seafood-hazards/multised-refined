@@ -1,0 +1,122 @@
+---
+title: "Enrichment Factor"
+subtitle: "Classifying samples against a local background, and testing the aquaculture signal"
+---
+
+```{css, echo=FALSE}
+th { white-space: nowrap; }
+```
+
+The background pages estimate a baseline; this one turns it into a per-sample verdict. The
+**enrichment factor** is
+
+$$\text{EF} = \frac{(\text{metal} / \text{Al})_\text{sample}}{(\text{metal} / \text{Al})_\text{background}}$$
+
+against a **local, data-driven background**: the offshore (> 10 km from the coast)
+**median** of metal / Al, per element and fraction. This follows EFSA's guidance to use a
+local background and to **avoid** literature crustal values (Turekian and Wedepohl), which
+distort marine backgrounds. Because aluminium is the normaliser, EF already controls for
+grain size, so it separates real enrichment from merely muddier sediment.
+
+**EF < 1** is read as adequate (at or below the local background); the classes 1-2, 2-5
+and > 5 mark rising enrichment **relative to the local offshore background** (so these are
+not the usual crustal-referenced numbers).
+
+```{r}
+#| label: setup
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+bdir <- "data/refined_summary"
+rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
+                           check.names = FALSE)
+efd <- rd("refined_ef_dist.csv")
+efp <- rd("refined_ef_pressure.csv")
+efb <- rd("refined_ef_background.csv")
+
+elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
+bin_levels  <- c("<1km", "1-5km", "5-20km", ">20km")
+theme_set(theme_minimal(base_size = 12))
+```
+
+## How enriched is the data?
+
+The share of samples in each EF class, bulk (reliable groups). A large green block means
+much of the data sits at or below the local background, a pristine-candidate pool.
+
+```{r}
+#| label: class-fig
+#| fig-cap: "EF class shares by element (bulk). About half of cobalt, copper, manganese and zinc is at or below background (EF<1); molybdenum is the most enriched (most 2-5 and >5)."
+#| fig-width: 8
+#| fig-height: 3.6
+efd |>
+  filter(cat == "bulk", reliable == TRUE) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  select(symbol, `<1` = pct_lt1, `1-2` = pct_1_2, `2-5` = pct_2_5, `>5` = pct_gt5) |>
+  pivot_longer(-symbol, names_to = "EF", values_to = "pct") |>
+  mutate(EF = factor(EF, levels = c("<1", "1-2", "2-5", ">5"))) |>
+  ggplot(aes(pct, symbol, fill = EF)) +
+  geom_col(width = 0.7) +
+  scale_fill_manual(values = c("<1" = "#228833", "1-2" = "#CCBB44",
+                               "2-5" = "#EE6677", ">5" = "#AA3377")) +
+  labs(x = "% of samples", y = NULL, fill = "EF")
+```
+
+The background reference and the EF summary per element and fraction:
+
+```{r}
+#| label: summary-table
+efd |>
+  filter(reliable == TRUE) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  left_join(efb |> select(symbol, cat, bg_ratio_al), by = c("symbol", "cat")) |>
+  transmute(Element = symbol, Fraction = cat, n,
+            `background metal/Al` = bg_ratio_al,
+            `median EF` = ef_p50, `P90 EF` = ef_p90, `% adequate (EF<1)` = pct_lt1) |>
+  arrange(Element, Fraction) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+## Does the aquaculture signal survive normalisation?
+
+The [Pressure-Based](./background-pressure.qmd) page found a near-cage rise in the **raw**
+values, part of which could be grain size. EF removes grain size, so if the rise persists
+it is real. The median EF by distance to the nearest farm (bulk, Norway):
+
+```{r}
+#| label: pressure-fig
+#| fig-cap: "Median EF by distance to aquaculture (bulk, log scale, dashed line = background). Copper, selenium, molybdenum and zinc stay enriched near the cages after grain-size normalisation; cobalt and manganese do not."
+#| fig-width: 8.5
+#| fig-height: 4.4
+efp |>
+  filter(cat == "bulk", symbol %in% c("CO","CU","MN","MO","SE","ZN")) |>
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         aq_bin = factor(aq_bin, levels = bin_levels)) |>
+  ggplot(aes(aq_bin, ef_p50, group = symbol, colour = symbol)) +
+  geom_hline(yintercept = 1, linetype = "dashed", colour = "grey60") +
+  geom_line(linewidth = 0.7) +
+  geom_point(size = 2) +
+  scale_y_log10() +
+  scale_colour_brewer(palette = "Dark2", name = NULL) +
+  labs(x = "distance to nearest aquaculture farm", y = "median EF (log)")
+```
+
+The signal holds. **Copper** climbs to a median EF above 5 right at the cages (and falls to
+background beyond 20 km), **selenium** and **molybdenum** to about 4-5, **zinc** to about
+2.5, all after grain-size normalisation, so these are genuine near-cage enrichments (copper
+antifouling, selenium feed, molybdenum from the oxygen-poor near-cage sediment). **Cobalt
+and manganese** stay at or below background throughout. Normalising also **sharpens the
+picture**: in the raw values copper was actually *lower* right at the cages (those sites
+are sandier), but per aluminium it is clearly the most enriched there, the near-cage
+gradient the raw numbers hid.
+
+::: {.callout-note}
+EF depends on its background: here the local offshore median of metal / Al, a defensible
+data-driven choice, but a different reference (a lower percentile, or the far-from-cage
+median) would shift every EF up or down. So "EF < 1 = adequate" is relative to this
+background, not an absolute verdict. Aluminium is measured for only about a third of bulk
+samples, so EF covers that subset; iodine is too sparse for any of this. Read with the
+three background pages, which set the reference EF builds on.
+:::
