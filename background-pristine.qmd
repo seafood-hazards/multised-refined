@@ -1,0 +1,138 @@
+---
+title: "Pristine Classification"
+subtitle: "Combining the background estimates into a per-sample verdict, and where it cannot be made"
+---
+
+```{css, echo=FALSE}
+th { white-space: nowrap; }
+```
+
+This page draws the background estimates together into a per-measurement **pristine**
+(at or below background) verdict, per element and fraction (a sample can be pristine for
+one element and not another). It combines three "at/below background" criteria from the
+earlier pages: **EF < 1** (the [Enrichment Factor](./background-ef.qmd), grain-size
+controlled), **below the [distribution-mixture threshold](./background-mixture.qmd)**, and
+**below the offshore P90** ([Background](./background.qmd)).
+
+Only **grain-size-controlled** verdicts are trusted. A raw-concentration version was tried
+and rejected: sandy near-cage sediment slips under a concentration threshold regardless of
+pressure, and (see below) aluminium is missing exactly where pressure is highest, so a
+concentration flag validated **backwards**. Where aluminium (hence EF) is absent, a sample
+is therefore left **unclassified** rather than guessed. Two flags are reported:
+
+- **EF rule** (permissive, EFSA-preferred): pristine where EF < 1.
+- **Strict rule** (conservative): pristine only where all three criteria agree.
+
+```{r}
+#| label: setup
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+bdir <- "data/refined_summary"
+rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
+                           check.names = FALSE)
+summ <- rd("refined_pristine_summary.csv")
+cov  <- rd("refined_pristine_coverage.csv")
+val  <- rd("refined_pristine_validation.csv")
+
+elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
+BLUE <- "#4477AA"; RED <- "#EE6677"
+theme_set(theme_minimal(base_size = 12))
+```
+
+## How much is pristine, and how much is classifiable
+
+Among the samples that can be classified (those with aluminium), the share flagged pristine
+under each rule, bulk. The **classifiable** column is the catch: for copper and zinc, only
+about a quarter of samples carry the aluminium needed to judge them at all.
+
+```{r}
+#| label: summary-table
+summ |>
+  filter(cat == "bulk", reliable == TRUE) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Element = symbol, `samples` = n, `% classifiable` = pct_classifiable,
+            `pristine (EF rule)` = pct_ef, `pristine (strict)` = pct_strict) |>
+  arrange(Element) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+```{r}
+#| label: pristine-fig
+#| fig-cap: "Share of classifiable bulk samples flagged pristine, EF rule versus strict. Molybdenum is least pristine; the strict rule is much lower for cobalt because its mixture threshold is unreliable (no clear two-population split)."
+#| fig-width: 7.5
+#| fig-height: 3.4
+summ |>
+  filter(cat == "bulk", reliable == TRUE) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  select(symbol, EF = pct_ef, strict = pct_strict) |>
+  pivot_longer(-symbol, names_to = "rule", values_to = "pct") |>
+  ggplot(aes(pct, symbol, fill = rule)) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_manual(values = c(EF = BLUE, strict = RED), name = NULL) +
+  labs(x = "% of classifiable samples pristine", y = NULL)
+```
+
+## The data gap: the aquaculture sites cannot be classified
+
+This is the key result, and a limitation for the aquaculture question. Aluminium coverage
+falls away exactly as you approach the cages: the sediments right under aquaculture, the
+ones most in need of a pristine-or-not verdict, almost never carry it.
+
+```{r}
+#| label: coverage-fig
+#| fig-cap: "Percentage of samples that are classifiable (carry aluminium) by distance to the nearest farm. Only about 2% of the samples within 1 km of a farm can be judged, against about 90% beyond 20 km."
+#| fig-width: 7.5
+#| fig-height: 2.8
+cov |>
+  filter(axis == "distance to aquaculture") |>
+  mutate(band = factor(band, levels = c("<1km", "1-5km", "5-20km", ">20km"))) |>
+  ggplot(aes(band, pct_classifiable)) +
+  geom_col(fill = "#AA3377", width = 0.65) +
+  geom_text(aes(label = paste0(pct_classifiable, "%")), vjust = -0.4, size = 3.2) +
+  scale_y_continuous(limits = c(0, 100), expand = expansion(mult = c(0, 0.1))) +
+  labs(x = "distance to nearest aquaculture farm", y = "% classifiable")
+```
+
+So while these methods can flag a background for the open-shelf data, they largely cannot
+speak to the near-cage sediment, because the aluminium normaliser was not measured there. A
+concrete recommendation follows: to assess aquaculture sites, aluminium (or another
+grain-size normaliser) should be reported alongside the trace elements.
+
+## Validation: pristine falls toward the coast and the cages
+
+On the samples that *can* be classified, the flag behaves as it should: the pristine share
+drops as sites approach the coast and the farms, confirming that the grain-size-controlled
+verdict is tracking real pressure (not grain size). Near-cage points rest on few classifiable
+samples, so read the trend, not the wiggle.
+
+```{r}
+#| label: validation-fig
+#| fig-cap: "Percentage pristine among classifiable samples, by distance to aquaculture and to coast (EF rule). Pristine rises with distance from pressure."
+#| fig-width: 8.5
+#| fig-height: 3.4
+val |>
+  filter(rule == "ef") |>
+  mutate(band = factor(band, levels = c("<1km","1-5km","5-20km",">20km","1-10km","10-50km",">50km"))) |>
+  ggplot(aes(band, pct_pristine, group = axis, colour = axis)) +
+  geom_line(linewidth = 0.7) + geom_point(size = 2) +
+  scale_colour_manual(values = c("distance to aquaculture" = "#AA3377",
+                                 "distance to coast" = BLUE), name = NULL) +
+  facet_wrap(~ axis, scales = "free_x") +
+  labs(x = NULL, y = "% pristine (classifiable)") +
+  theme(legend.position = "none")
+```
+
+::: {.callout-note}
+"Pristine" here means at or below the local background by a grain-size-controlled measure,
+per element, not an absolute or a site-level judgement. The strict rule inherits the
+distribution-mixture caveat (unreliable where there is no clear two-population split, as for
+cobalt). The honest headline is the coverage gap: the classification is trustworthy where
+aluminium exists, which is most of the open-shelf data but almost none of the near-cage data,
+so the aquaculture sites remain largely unassessable from these measurements alone. This is a
+synthesis of the [Background](./background.qmd),
+[Enrichment Factor](./background-ef.qmd) and
+[Distribution-Mixture](./background-mixture.qmd) pages; iodine is too sparse throughout.
+:::
