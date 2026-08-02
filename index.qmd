@@ -53,8 +53,13 @@ fifth generation, **refined**, and the analyses performed on it.
 - [DB Schema](./db-schema-refined.qmd): the table layout of the refined database (all
   its tables, including the aquaculture reference), with an entity-relationship diagram.
 
-**Analyses** on the refined database (the pristine / background-sediment work) will be
-added here as they are built.
+**Analyses** on the refined database (the pristine / background-sediment work):
+
+- [Background](./background.qmd): estimating a natural background concentration per
+  element and fraction, comparing the global distribution with an offshore subset.
+
+More approaches (normalised backgrounds, pressure-based definitions) will be added as
+they are built.
 
 ::: {.callout-note}
 How the refined database is assembled from the merged database, step by step (the
