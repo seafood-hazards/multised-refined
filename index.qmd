@@ -55,10 +55,14 @@ fifth generation, **refined**, and the analyses performed on it.
 
 **Analyses** on the refined database (the pristine / background-sediment work):
 
-- [Background](./background.qmd): estimating a natural background concentration per
-  element and fraction, comparing the global distribution with an offshore subset.
+- [Background](./background.qmd): a natural background per element and fraction, the
+  global distribution versus an offshore subset.
+- [Grain-Size-Normalised Background](./background-gsnorm.qmd): the same after removing
+  the grain-size effect, normalised three ways (metal/Al, metal/Fe, metal/mud).
+- [Pressure-Based Background](./background-pressure.qmd): background from distance to
+  aquaculture, and the near-cage enrichment (Norway).
 
-More approaches (normalised backgrounds, pressure-based definitions) will be added as
+Further approaches (enrichment factors, distribution-based definitions) will be added as
 they are built.
 
 ::: {.callout-note}
