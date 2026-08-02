@@ -33,7 +33,10 @@ csvs <- c("refined_background_percentiles.csv",
           "refined_ef_background.csv",
           "refined_ef_dist.csv",
           "refined_ef_pressure.csv",
-          "refined_ef_meta.csv")
+          "refined_ef_meta.csv",
+          "refined_mixture_components.csv",
+          "refined_mixture_hist.csv",
+          "refined_mixture_meta.csv")
 
 for (f in csvs) {
   dest <- file.path(csv_dir, f)

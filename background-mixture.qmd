@@ -1,0 +1,121 @@
+---
+title: "Distribution-Mixture Background"
+subtitle: "Separating a background population from an enriched one, from the distribution alone"
+---
+
+```{css, echo=FALSE}
+th { white-space: nowrap; }
+```
+
+The other pages lean on where or how far from pressure a sample sits. This one uses only
+the **shape of the distribution**. A concentration distribution is often a mixture of two
+populations: a natural **background** and an **enriched** one. Fitting a two-component
+Gaussian mixture to the log concentration separates them, and the **crossover** between the
+components is a background threshold (the upper bound of the natural population), with no
+external reference, no offshore or aquaculture filter.
+
+It is fitted on the **raw** value (mg/kg) per element and fraction. Raw values carry grain
+size, so a muddy-versus-sandy split can imitate a background-versus-enriched one; this is
+the distribution-only view, to be read against the offshore, grain-size-normalised and
+enrichment-factor pages.
+
+```{r}
+#| label: setup
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+bdir <- "data/refined_summary"
+rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
+                           check.names = FALSE)
+comp <- rd("refined_mixture_components.csv")
+hist <- rd("refined_mixture_hist.csv")
+offc <- rd("refined_background_compare.csv")
+
+elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
+theme_set(theme_minimal(base_size = 12))
+```
+
+## The two populations
+
+Each panel is the log concentration (bulk): the grey histogram, the fitted **background**
+(blue) and **enriched** (red) components, their sum (black), and the crossover threshold
+(dashed). Where the two humps are distinct the split is clean; where they overlap the
+distribution is really a continuum.
+
+```{r}
+#| label: mixture-fig
+#| fig-cap: "Two-component Gaussian mixture on log10(concentration), bulk. Manganese, molybdenum and selenium show a distinct enriched population; copper, zinc and cobalt are closer to a single continuum, so their threshold is a soft split."
+#| fig-width: 9
+#| fig-height: 5.4
+cb <- comp |> filter(cat == "bulk", symbol %in% c("CO","CU","MN","MO","SE","ZN")) |>
+  mutate(mu_bg = log10(gm_bg), mu_en = log10(gm_en), thr = log10(threshold))
+hb <- hist |> mutate(symbol = factor(symbol, levels = elem_levels))
+
+# fitted mixture curves, scaled from density to counts (n * bin width)
+curve <- cb |> rowwise() |> do({
+  r <- .
+  h <- hb[hb$symbol == r$symbol, ]
+  bw <- mean(diff(sort(h$bin_mid)))
+  x  <- seq(min(h$bin_mid), max(h$bin_mid), length.out = 200)
+  scale <- r$n * bw
+  data.frame(symbol = r$symbol, x = x,
+             bg  = r$lambda_bg * dnorm(x, r$mu_bg, r$sd_bg_log) * scale,
+             en  = (1 - r$lambda_bg) * dnorm(x, r$mu_en, r$sd_en_log) * scale) |>
+    mutate(tot = bg + en)
+}) |> ungroup() |> mutate(symbol = factor(symbol, levels = elem_levels))
+
+ggplot() +
+  geom_col(data = hb, aes(bin_mid, count), fill = "grey85", width = 0.06) +
+  geom_line(data = curve, aes(x, bg), colour = "#4477AA", linewidth = 0.6) +
+  geom_line(data = curve, aes(x, en), colour = "#EE6677", linewidth = 0.6) +
+  geom_line(data = curve, aes(x, tot), colour = "black", linewidth = 0.5) +
+  geom_vline(data = cb, aes(xintercept = thr), linetype = "dashed", colour = "grey40") +
+  facet_wrap(~ symbol, scales = "free") +
+  labs(x = "log10 concentration (mg/kg)", y = "count")
+```
+
+## The threshold, and does it agree with the offshore background?
+
+The mixture threshold is a background upper bound derived from the distribution alone. The
+offshore 90th percentile (from the [Background](./background.qmd) page) is one derived from
+location. They come from unrelated information, so agreement is a real cross-check.
+
+```{r}
+#| label: compare-table
+off <- offc |> filter(cat == "bulk") |> select(symbol, offshore_p90 = p90_off10)
+comp |> filter(cat == "bulk") |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  left_join(off, by = "symbol") |>
+  transmute(Element = symbol,
+            `background geom-mean` = gm_bg,
+            `mixture threshold` = threshold,
+            `offshore P90` = offshore_p90,
+            `% background` = pct_bg,
+            `two populations?` = ifelse(separated == TRUE, "yes", "continuum")) |>
+  arrange(Element) |>
+  kable(caption = "Bulk background from the mixture, and the offshore P90 for comparison (mg/kg).")
+```
+
+The two methods **line up** where the data is richest: copper's mixture threshold (about 28)
+sits near its offshore P90 (about 34), and molybdenum's (about 2.4) near its offshore value
+(about 2.9), despite one being a distribution split and the other a spatial filter. That
+convergence is reassuring for a background near those values. Manganese and zinc come out
+lower on the mixture than offshore.
+
+The **two populations? / continuum** column matters: manganese, molybdenum and selenium
+have a genuinely distinct enriched hump, while copper, zinc and cobalt do not, their
+distributions are closer to a single skewed population, so their threshold is a soft cut,
+not a natural break. A distinct hump is not always contamination either: for manganese it
+may be the muddy-versus-sandy grain-size split showing through in the raw value.
+
+::: {.callout-note}
+The mixture is unsupervised and knows nothing about pressure, so its "background"
+population is only the lower mode of the distribution, which is a good proxy for natural
+sediment only when enrichment is limited to a minority of sites. It is fitted on raw
+values, so grain size can create or hide a second population; the
+[Grain-Size-Normalised](./background-gsnorm.qmd) and [Enrichment Factor](./background-ef.qmd)
+pages are the controls. Read as one line of evidence that, encouragingly, agrees with the
+spatial background for the well-covered metals. Iodine is too sparse to fit.
+:::

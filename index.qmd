@@ -67,9 +67,11 @@ fifth generation, **refined**, and the analyses performed on it.
   aquaculture, and the near-cage enrichment (Norway).
 - [Enrichment Factor](./background-ef.qmd): classifying samples against a local
   background (EF), and testing whether the aquaculture signal survives normalisation.
+- [Distribution-Mixture Background](./background-mixture.qmd): separating a background
+  population from an enriched one from the distribution alone, and checking it against
+  the spatial background.
 
-Further approaches (distribution-based definitions, a multi-element pollution index) will
-be added as they are built.
+A multi-element pollution index may be added later.
 
 ::: {.callout-note}
 How the refined database is assembled from the merged database, step by step (the
