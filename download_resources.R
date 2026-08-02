@@ -1,5 +1,18 @@
 options(timeout = 600)
 
+# ── Refined database ───────────────────────────────────────────────────────
+# The refined SQLite database, served as a static file for the in-browser Tables
+# viewer (loaded client-side via WebAssembly). Downloaded once from this repo's
+# release; a local copy (e.g. from the pipeline output) is reused if present.
+db_release <- "https://github.com/seafood-hazards/multised-refined/releases/download/v0.1.0"
+if (!file.exists("multised_refined.sqlite")) {
+  download.file(file.path(db_release, "multised_refined.sqlite"),
+                "multised_refined.sqlite", mode = "wb")
+  message("multised_refined.sqlite downloaded.")
+} else {
+  message("Using existing multised_refined.sqlite")
+}
+
 # ── Analysis summary CSVs ──────────────────────────────────────────────────
 # Tidy tables written by the processing pipeline (R/analysis/*/01_refined_*.R) and
 # read at render time by the Analyses pages. Downloaded once from this repo's GitHub
