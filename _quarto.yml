@@ -23,6 +23,8 @@ website:
             href: background-gsnorm.qmd
           - text: "Pressure-Based Background"
             href: background-pressure.qmd
+          - text: "Enrichment Factor"
+            href: background-ef.qmd
 
 format:
   html:

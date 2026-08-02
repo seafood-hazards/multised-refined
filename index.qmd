@@ -61,9 +61,11 @@ fifth generation, **refined**, and the analyses performed on it.
   the grain-size effect, normalised three ways (metal/Al, metal/Fe, metal/mud).
 - [Pressure-Based Background](./background-pressure.qmd): background from distance to
   aquaculture, and the near-cage enrichment (Norway).
+- [Enrichment Factor](./background-ef.qmd): classifying samples against a local
+  background (EF), and testing whether the aquaculture signal survives normalisation.
 
-Further approaches (enrichment factors, distribution-based definitions) will be added as
-they are built.
+Further approaches (distribution-based definitions, a multi-element pollution index) will
+be added as they are built.
 
 ::: {.callout-note}
 How the refined database is assembled from the merged database, step by step (the
