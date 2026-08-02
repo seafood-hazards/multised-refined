@@ -50,8 +50,12 @@ fifth generation, **refined**, and the analyses performed on it.
 
 ## What this site covers
 
+**DB Design**
+
 - [DB Schema](./db-schema-refined.qmd): the table layout of the refined database (all
   its tables, including the aquaculture reference), with an entity-relationship diagram.
+- [Tables](./refined-tables.qmd): a read-only browser over the database, running in your
+  browser via WebAssembly.
 
 **Analyses** on the refined database (the pristine / background-sediment work):
 

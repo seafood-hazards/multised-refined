@@ -1,6 +1,9 @@
 project:
   type: website
   pre-render: download_resources.R
+  resources:
+    - "*.sqlite"
+    - libs/
 
 website:
   title: "multised (refined)"
@@ -13,8 +16,12 @@ website:
     left:
       - text: "Home"
         href: index.qmd
-      - text: "DB Schema"
-        href: db-schema-refined.qmd
+      - text: "DB Design"
+        menu:
+          - text: "DB Schema"
+            href: db-schema-refined.qmd
+          - text: "Tables"
+            href: refined-tables.qmd
       - text: "Analyses"
         menu:
           - text: "Background"
