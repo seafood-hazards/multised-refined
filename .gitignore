@@ -1,0 +1,10 @@
+/.quarto/
+/_site/
+/data
+**/*.quarto_ipynb
+.Rproj.user
+.Rhistory
+.RData
+
+# downloaded databases (fetched by download_resources.R)
+*.sqlite

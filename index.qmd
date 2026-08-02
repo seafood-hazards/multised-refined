@@ -1,0 +1,64 @@
+---
+title: "multised (refined)"
+subtitle: "The refined marine-sediment database and the analyses built on it"
+---
+
+**multised** assembles a database of marine-sediment trace-element measurements from
+five external sources, harmonises them into a common schema, and progressively
+quality-controls the result. This site presents the **refined** database: an
+analysis-ready version of the merged database, restructured and slimmed with the
+reusable results of the earlier analyses baked in, together with the analyses built on
+it.
+
+The refined database is purpose-built for identifying **pristine / background
+sediments**, sediment relatively unaffected by local pressure, so that concentrations
+elsewhere can be judged against a natural baseline. It bakes in the values those
+analyses reuse (the Fe / Al and organic-carbon ratios, the grain-size fines, the
+aquaculture link and the repeat-sampling grouping) and leaves the classifications
+themselves (enrichment factors, thresholds, the pristine label) to the analyses.
+
+## The database
+
+A single database, `multised_refined.sqlite`. It holds the 7 target elements in one
+`measurement` table (bulk and sieved told apart by `frac_class`) with the Fe / Al /
+organic ratios baked in, a slim `normaliser` table, and the repeat-sampling grouping on
+the sites. The Norwegian **aquaculture** reference is now a table **inside** this
+database (each Norwegian sediment site links to its nearest farm by `site.aqua_id`), so
+there is no separate aquaculture file.
+
+```{r}
+library(tibble)
+library(knitr)
+
+tribble(
+  ~Table,        ~Contents,
+  "measurement", "The 7 target elements (CO CU I MN MO SE ZN), bulk and sieved by frac_class, with ratio_fe / ratio_al / ratio_corg baked in.",
+  "normaliser",  "Fe / Al / organic carbon per subsample and fraction (the ratio denominators).",
+  "site",        "Locations, with the geo-enrichment, the aquaculture link (aqua_id) and the repeat-sampling grouping (repeat_group, n_years).",
+  "aquaculture", "Norwegian marine aquaculture sites (active and closed), linked from site.aqua_id.",
+  "subsample / event / dataset / element / method", "The supporting dimensions (depth slices, sampling events, campaigns, the element lookup and analytical methods)."
+) |> kable()
+```
+
+## Where this sits in the pipeline
+
+The data moves through five generations. The first four (per-source **pilot** and
+**slim**, the per-source **clean** databases, and the single **merged** database) and
+how the refined database is **built** from the merged one are documented on the
+[merged site](https://seafood-hazards.github.io/multised-merged/). This site is the
+fifth generation, **refined**, and the analyses performed on it.
+
+## What this site covers
+
+- [DB Schema](./db-schema-refined.qmd): the table layout of the refined database (all
+  its tables, including the aquaculture reference), with an entity-relationship diagram.
+
+**Analyses** on the refined database (the pristine / background-sediment work) will be
+added here as they are built.
+
+::: {.callout-note}
+How the refined database is assembled from the merged database, step by step (the
+restructure, the normaliser, the baked ratios, the aquaculture and repeat-sampling
+links), is documented on the
+[merged site](https://seafood-hazards.github.io/multised-merged/) under **Refined DB**.
+:::

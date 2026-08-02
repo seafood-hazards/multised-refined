@@ -1,0 +1,207 @@
+---
+title: "DB Schema"
+subtitle: "The refined marine-sediment database the analyses on this site read"
+---
+
+```{css, echo=FALSE}
+th { white-space: nowrap; }
+.mermaid { max-width: 680px; margin-left: auto; margin-right: auto; }
+.mermaid svg { max-width: 100% !important; width: 100%; height: auto; }
+```
+
+The **refined** database (`multised_refined.sqlite`) is a restructured, slimmed version
+of the merged database, holding the reusable results of the earlier analyses so the
+pristine / background-sediment analyses on this site do not recompute them. This page is
+the schema reference. How the database is **built** from the merged one (the restructure,
+the normaliser, the baked ratios, the aquaculture and repeat links) is documented on the
+[merged site](https://seafood-hazards.github.io/multised-merged/) under **Refined DB**.
+
+## The rule behind it
+
+One rule decides what the refined database holds:
+
+> **Bake in facts and already-computed reusable values; defer every classification or
+> threshold.**
+
+So it carries the **normalisation ratios** (metal / Fe, metal / Al, metal / organic
+carbon), the grain-size fines, the aquaculture link and the repeat-sampling grouping, all
+as ready-to-use columns. It carries **none** of the decisions the pristine work will make:
+no depth bands, no offshore or pressure flags, no enrichment-factor thresholds, no pristine
+label. The raw material for those (ratios, distances, raw depth) is present; the calls are
+left to the analyses.
+
+## Schema diagram
+
+```{mermaid}
+erDiagram
+  dataset     ||--o{ event              : "dataset_id"
+  site        ||--o{ event              : "site_id"
+  aquaculture ||--o{ site               : "aqua_id"
+  event       ||--o{ subsample          : "event_id"
+  subsample   ||--o{ measurement        : "subsample_id"
+  subsample   ||--o{ normaliser         : "subsample_id"
+  element     ||--o{ measurement        : "symbol"
+  element     ||--o{ method             : "symbol"
+  method      ||--o{ measurement        : "method_id"
+
+  aquaculture {
+    INTEGER aqua_id PK
+  }
+  site {
+    INTEGER site_id PK
+    INTEGER aqua_id FK
+    TEXT repeat_group
+  }
+  event {
+    INTEGER event_id PK
+    INTEGER dataset_id FK
+    INTEGER site_id FK
+  }
+  subsample {
+    INTEGER subsample_id PK
+    INTEGER event_id FK
+    REAL fines_lt63
+  }
+  normaliser {
+    INTEGER subsample_id FK
+    TEXT frac_class
+    REAL fe
+    REAL al
+    REAL corg
+  }
+  measurement {
+    INTEGER measurement_id PK
+    INTEGER subsample_id FK
+    TEXT symbol FK
+    TEXT frac_class
+    REAL ratio_fe
+  }
+  element {
+    TEXT symbol PK
+  }
+  method {
+    INTEGER method_id PK
+    TEXT symbol FK
+  }
+```
+
+```{r}
+library(tibble)
+library(knitr)
+```
+
+## measurement
+
+One row per target-element reading, bulk and sieved told apart by `frac_class` (never
+pooled). Holds only the 7 target elements (Fe, Al and organic carbon moved to
+`normaliser`), with the normalisation ratios baked in. Sieve columns are NULL for bulk.
+
+```{r}
+tribble(
+  ~Column,             ~Type,     ~Meaning,
+  "measurement_id",    "INTEGER", "Primary key.",
+  "subsample_id",      "INTEGER", "-> subsample.",
+  "symbol",            "TEXT",    "Target element (-> element); one of CO CU I MN MO SE ZN.",
+  "frac_class",        "TEXT",    "Sediment fraction: 'bulk' or 'sieved'.",
+  "value",             "REAL",    "Value in the original unit.",
+  "unit",              "TEXT",    "Original reporting unit.",
+  "value_std",         "REAL",    "Standardised value, mg/kg.",
+  "value_sd",          "REAL",    "SD across replicates, else NULL.",
+  "n_rep",             "INTEGER", "Replicates averaged (1 = single).",
+  "value_uncrt",       "REAL",    "Analytical uncertainty, mg/kg, else NULL.",
+  "method_id",         "INTEGER", "-> method.",
+  "ratio_fe",          "REAL",    "value_std / Fe (same subsample, fraction), else NULL.",
+  "ratio_al",          "REAL",    "value_std / Al, else NULL.",
+  "ratio_corg",        "REAL",    "value_std / organic carbon, else NULL.",
+  "sieve_um_std",      "REAL",    "Harmonised sieve cutoff (um); NULL for bulk.",
+  "sieve_class",       "TEXT",    "Sieve label, e.g. '<63um'; NULL for bulk.",
+  "source",            "TEXT",    "Source database name.",
+  "src_measurement_id","TEXT",    "Original key (provenance).",
+  "outlier_flag",      "TEXT",    "Distributional outlier marker: 'high' / 'low', else NULL."
+) |> kable()
+```
+
+## normaliser
+
+The Fe / Al / organic-carbon values, one wide row per **subsample and fraction** (the
+grain a ratio needs, since a subsample can carry both fractions).
+
+```{r}
+tribble(
+  ~Column,        ~Type,     ~Meaning,
+  "subsample_id", "INTEGER", "-> subsample.",
+  "frac_class",   "TEXT",    "'bulk' or 'sieved'.",
+  "fe",           "REAL",    "Iron, mg/kg, else NULL.",
+  "al",           "REAL",    "Aluminium, mg/kg, else NULL.",
+  "corg",         "REAL",    "Organic carbon, mg/kg, else NULL."
+) |> kable()
+```
+
+## site (analysis columns)
+
+One row per location. Beyond the geo-enrichment (depth, `dist_to_coast`, `sea_name`,
+`dist_to_aquaculture`), it carries:
+
+```{r}
+tribble(
+  ~Column,        ~Type,     ~Meaning,
+  "aqua_id",      "INTEGER", "-> aquaculture: the nearest aquaculture site (Norway only, else NULL).",
+  "repeat_group", "TEXT",    "Location cell (lat/lon to 2 dp, ~1.1 km) for repeat-sampling grouping.",
+  "n_years",      "INTEGER", "Distinct sampling years at that cell (over all dated events)."
+) |> kable()
+```
+
+## subsample
+
+Physical properties of a depth slice, including the derived grain-size fines.
+
+```{r}
+tribble(
+  ~Column,        ~Type,     ~Meaning,
+  "subsample_id", "INTEGER", "Primary key.",
+  "event_id",     "INTEGER", "-> event.",
+  "depth_from",   "REAL",    "Top of the slice, cm (raw, not banded), else NULL.",
+  "depth_to",     "REAL",    "Bottom of the slice, cm, else NULL.",
+  "fines_lt63",   "REAL",    "% finer than 63 um (mud content), else NULL.",
+  "fines_basis",  "TEXT",    "How fines_lt63 was derived."
+) |> kable()
+```
+
+## aquaculture
+
+The Norwegian aquaculture reference, a table inside this database, linked from
+`site.aqua_id`. Norwegian marine aquaculture sites (active and closed), from the
+Norwegian Directorate of Fisheries register; **Norway only**, so `aqua_id` and
+`dist_to_aquaculture` are populated only for Norwegian sediment sites. How the table is
+built is on the [clean-analyses site](https://seafood-hazards.github.io/multised-clean/).
+
+```{r}
+tribble(
+  ~Column,           ~Type,     ~Meaning,
+  "aqua_id",         "INTEGER", "Primary key (referenced by site.aqua_id).",
+  "loknr",           "INTEGER", "Site number in the Norwegian register.",
+  "name",            "TEXT",    "Site name (kept in Norwegian).",
+  "latitude",        "REAL",    "Latitude (WGS84), from the national grid (ETRS89 / UTM 33N).",
+  "longitude",       "REAL",    "Longitude (WGS84), from the national grid.",
+  "start_year",      "INTEGER", "Year the site was cleared.",
+  "end_year",        "INTEGER", "Year the site was withdrawn (NULL for active sites).",
+  "active",          "INTEGER", "1 for active, 0 for closed.",
+  "water_type",      "TEXT",    "salt, brackish, or fresh/salt.",
+  "capacity",        "REAL",    "Cleared (permitted) capacity, as reported.",
+  "capacity_unit",   "TEXT",    "Unit of capacity (tonnes, decare, count, ...).",
+  "capacity_tonnes", "REAL",    "Capacity converted to tonnes where the unit is a mass; else NULL.",
+  "fish_types",      "TEXT",    "Species farmed, translated to English (rare species keep Norwegian).",
+  "placement",       "TEXT",    "sea or land.",
+  "county",          "TEXT",    "County (first name kept where the source is multilingual).",
+  "municipality",    "TEXT",    "Municipality (first name kept where the source is multilingual)."
+) |> kable()
+```
+
+::: {.callout-note}
+The refined database is deliberately incomplete by design: it stops at the reusable
+building blocks. The pristine / background analyses that consume it (enrichment factors,
+depth bands, pressure and pristine classification) are the pages this site will add;
+their choices are never frozen into the data. Dimensions carried unchanged (`dataset`,
+`event`, `method` with its detection limits) match the
+[merged schema](https://seafood-hazards.github.io/multised-merged/db-schema-merged.html).
+:::
