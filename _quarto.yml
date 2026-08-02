@@ -32,6 +32,8 @@ website:
             href: background-pressure.qmd
           - text: "Enrichment Factor"
             href: background-ef.qmd
+          - text: "Distribution-Mixture Background"
+            href: background-mixture.qmd
 
 format:
   html:
