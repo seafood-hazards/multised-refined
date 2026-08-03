@@ -81,7 +81,7 @@ thresholds = {
 //| panel: sidebar
 
 viewof selected_element = Inputs.select(elements, {
-  label: "Element:", format: d => d.label, value: elements[0]
+  label: "Element:", format: d => d.label
 })
 
 viewof selected_fraction = Inputs.select(fractions, {
