@@ -6,5 +6,6 @@
 .Rhistory
 .RData
 
-# downloaded databases (fetched by download_resources.R)
+# downloaded data files (fetched by download_resources.R)
 *.sqlite
+*.tsv.gz
