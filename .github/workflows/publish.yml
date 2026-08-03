@@ -34,6 +34,8 @@ jobs:
       # The DB Design pages render static column tables (tibble + knitr); the
       # schema diagrams are mermaid, rendered natively by Quarto. Add DB / plotting
       # packages here (and a pre-render download) when a page reads a database.
+      # The Downloads pages read the refined DB (DBI/RSQLite) and the flat dataset
+      # (readr) at render for their contents tables and previews.
       - name: Install R packages
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
@@ -44,6 +46,9 @@ jobs:
             any::dplyr
             any::tidyr
             any::ggplot2
+            any::readr
+            any::DBI
+            any::RSQLite
 
       - name: Render site
         run: quarto render
