@@ -104,6 +104,13 @@ pressure held back for evaluation:
 
 A multi-element pollution index may be added later.
 
+**Downloads**
+
+- [Database](./download-database.qmd): the full refined database as a single SQLite file.
+- [Dataset](./download-dataset.qmd): a flat, denormalised table (tsv.gz) of just the values
+  needed for background and enrichment work, one row per measurement, with a description of
+  every column.
+
 ::: {.callout-note}
 How the refined database is assembled from the merged database, step by step (the
 restructure, the normaliser, the baked ratios, the aquaculture and repeat-sampling

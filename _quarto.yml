@@ -42,6 +42,12 @@ website:
             href: background-pristine.qmd
           - text: "Enrichment Map"
             href: enrichment-map.qmd
+      - text: "Downloads"
+        menu:
+          - text: "Database"
+            href: download-database.qmd
+          - text: "Dataset"
+            href: download-dataset.qmd
 
 format:
   html:

@@ -1,0 +1,91 @@
+---
+title: "Dataset Download"
+subtitle: "A single flat table of the values needed for background and enrichment work"
+---
+
+For users who want to try their **own** background or enrichment methods, this is a single
+**denormalised table**: one row per target measurement, with only the values those analyses
+need. It is drawn from the [refined database](./download-database.qmd) but drops the
+relational structure, the surrogate keys, the provenance and the uncertainty / method
+detail. The original **source** of each measurement is kept, so results can be traced back
+or filtered by programme.
+
+The file is a **tab-separated, gzip-compressed** text file (`.tsv.gz`), readable by any
+data tool.
+
+```{r}
+#| label: download-button
+#| output: asis
+url <- "https://github.com/seafood-hazards/multised-refined/releases/download/v0.1.0/multised_refined_dataset.tsv.gz"
+size_mb <- round(file.size("multised_refined_dataset.tsv.gz") / 1024^2, 2)
+cat(sprintf(
+  '<a class="btn btn-primary" href="%s" download role="button">Download multised_refined_dataset.tsv.gz (%s MB)</a>\n',
+  url, size_mb))
+```
+
+```{r}
+#| label: setup
+library(readr)
+library(dplyr)
+library(tidyr)
+library(knitr)
+
+d <- read_tsv("multised_refined_dataset.tsv.gz", show_col_types = FALSE)
+dict <- read_csv("data/refined_summary/refined_dataset_dictionary.csv", show_col_types = FALSE)
+```
+
+```{r}
+#| label: size
+#| output: asis
+cat(sprintf("The dataset has **%s rows** and **%d columns**.\n\n",
+            format(nrow(d), big.mark = ","), ncol(d)))
+```
+
+## Columns
+
+Each row is one element measurement at one site, layer and fraction. The normalisers
+(`al_mgkg`, `fe_mgkg`, `corg_mgkg`) and `fines_pct` are the covariates for grain-size and
+Fe / Al / organic normalisation; `dist_to_coast_km` and `dist_to_aquaculture_km` support
+offshore and pressure-based backgrounds.
+
+```{r}
+#| label: dictionary
+dict |>
+  mutate(unit = ifelse(is.na(unit) | unit == "", "-", unit)) |>
+  rename(Column = column, Unit = unit, Description = description) |>
+  kable()
+```
+
+## How the fractions and coverage look
+
+Counts of rows per element and fraction (bulk and the sieve cutoffs are never pooled;
+iodine and selenium are sparse, as noted throughout the analyses):
+
+```{r}
+#| label: coverage
+d |>
+  count(element, fraction) |>
+  pivot_wider(names_from = fraction, values_from = n, values_fill = 0) |>
+  rename(Element = element) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+## Preview
+
+The first rows of the dataset:
+
+```{r}
+#| label: preview
+d |> head(8) |> kable()
+```
+
+## Notes for reuse
+
+- Concentrations are **standardised dry-weight mg/kg** (`value_mgkg`); grain-size
+  `fines_pct` is a percentage.
+- Empty cells are genuine missing values (for example, `al_mgkg` is empty where aluminium
+  was not measured, and `dist_to_aquaculture_km` is empty outside Norway).
+- `outlier_flag` marks distributional outliers (mostly registration errors); the analyses
+  on this site exclude flagged rows, and you probably want to as well.
+- A site is identified by its `latitude` / `longitude` (rounded to 3 decimal places); the
+  same location can appear across several years.

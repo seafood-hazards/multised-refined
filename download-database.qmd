@@ -1,0 +1,65 @@
+---
+title: "Database Download"
+subtitle: "The full refined database as a single SQLite file"
+---
+
+The complete **refined database** is available as one **SQLite** file. It holds everything
+the analyses on this site are built from: the seven target elements with the Fe / Al /
+organic ratios baked in, the normaliser table, the grain-size fines, the site
+geo-enrichment, the repeat-sampling grouping, and the Norwegian aquaculture reference (as a
+table inside the database). Its layout is described on the [DB Schema](./db-schema-refined.qmd)
+page, and you can browse it in your browser on the [Tables](./refined-tables.qmd) page.
+
+```{r}
+#| label: download-button
+#| output: asis
+url <- "https://github.com/seafood-hazards/multised-refined/releases/download/v0.1.0/multised_refined.sqlite"
+size_mb <- round(file.size("multised_refined.sqlite") / 1024^2, 1)
+cat(sprintf(
+  '<a class="btn btn-primary" href="%s" download role="button">Download multised_refined.sqlite (%s MB)</a>\n',
+  url, size_mb))
+```
+
+## What is inside
+
+```{r}
+#| label: tables
+library(DBI)
+library(RSQLite)
+library(dplyr)
+library(knitr)
+
+con <- dbConnect(SQLite(), "multised_refined.sqlite")
+tabs <- dbListTables(con)
+descr <- c(
+  measurement = "The 7 target elements (bulk and sieved by frac_class) with ratio_fe / ratio_al / ratio_corg.",
+  normaliser  = "Fe / Al / organic carbon per subsample and fraction (the ratio denominators).",
+  subsample   = "Sediment layers (depth, grain-size fines).",
+  event       = "Sampling events (year, tool, layering).",
+  site        = "Locations with geo-enrichment, the aquaculture link and repeat-sampling grouping.",
+  element     = "The element lookup (7 targets).",
+  method      = "Analytical methods used by the targets.",
+  dataset     = "Source campaigns / datasets.",
+  aquaculture = "Norwegian marine aquaculture sites, linked from site.aqua_id."
+)
+counts <- sapply(tabs, function(t)
+  dbGetQuery(con, sprintf("SELECT COUNT(*) n FROM `%s`", t))$n)
+dbDisconnect(con)
+
+tibble(Table = tabs,
+       Rows = format(counts, big.mark = ","),
+       Contents = descr[tabs]) |>
+  arrange(match(Table, names(descr))) |>
+  kable()
+```
+
+## Format and use
+
+The file is a standard **SQLite 3** database, readable without this site. A few ways in:
+
+- **R**: `DBI::dbConnect(RSQLite::SQLite(), "multised_refined.sqlite")`, then `dbGetQuery()`.
+- **Python**: the built-in `sqlite3`, or `pandas.read_sql`.
+- **Command line**: `sqlite3 multised_refined.sqlite`.
+
+If you only need the flat values for background / enrichment work, the
+[Dataset Download](./download-dataset.qmd) page offers a single denormalised table instead.

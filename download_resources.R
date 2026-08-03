@@ -13,6 +13,17 @@ if (!file.exists("multised_refined.sqlite")) {
   message("Using existing multised_refined.sqlite")
 }
 
+# ── Downloadable flat dataset ──────────────────────────────────────────────
+# The denormalised TSV served on the Dataset Download page (also read at render
+# for the row count and preview). Same release, reused locally if present.
+if (!file.exists("multised_refined_dataset.tsv.gz")) {
+  download.file(file.path(db_release, "multised_refined_dataset.tsv.gz"),
+                "multised_refined_dataset.tsv.gz", mode = "wb")
+  message("multised_refined_dataset.tsv.gz downloaded.")
+} else {
+  message("Using existing multised_refined_dataset.tsv.gz")
+}
+
 # ── Analysis summary CSVs ──────────────────────────────────────────────────
 # Tidy tables written by the processing pipeline (R/analysis/*/01_refined_*.R) and
 # read at render time by the Analyses pages. Downloaded once from this repo's GitHub
@@ -40,7 +51,8 @@ csvs <- c("refined_background_percentiles.csv",
           "refined_pristine_summary.csv",
           "refined_pristine_coverage.csv",
           "refined_pristine_validation.csv",
-          "refined_pristine_meta.csv")
+          "refined_pristine_meta.csv",
+          "refined_dataset_dictionary.csv")
 
 for (f in csvs) {
   dest <- file.path(csv_dir, f)
