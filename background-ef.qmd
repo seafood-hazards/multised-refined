@@ -22,6 +22,12 @@ grain size, so it separates real enrichment from merely muddier sediment.
 and > 5 mark rising enrichment **relative to the local offshore background** (so these are
 not the usual crustal-referenced numbers).
 
+The background here uses **no aquaculture information**: it is the offshore distribution
+alone. That keeps the estimate independent of the pressure it is meant to detect. The
+distance-to-aquaculture panels below are therefore an **evaluation**, not an input, testing
+whether the enrichment the factor reports lines up with the known pressure gradient (the
+[Pressure-Based Background](./background-pressure.qmd) page).
+
 ```{r}
 #| label: setup
 library(dplyr)

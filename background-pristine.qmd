@@ -12,7 +12,13 @@ This page draws the background estimates together into a per-measurement **prist
 one element and not another). It combines three "at/below background" criteria from the
 earlier pages: **EF < 1** (the [Enrichment Factor](./background-ef.qmd), grain-size
 controlled), **below the [distribution-mixture threshold](./background-mixture.qmd)**, and
-**below the offshore P90** ([Background](./background.qmd)).
+**below the offshore P90** ([Global Background](./background.qmd)).
+
+Every one of these criteria is estimated with **no aquaculture information**, so the
+pristine verdict is independent of the pressure it is meant to reveal. The aquaculture
+sites enter only afterwards, as an **evaluation**: the closing section checks that the
+pristine fraction falls as sediments approach the cages, which is the sanity check that the
+estimate behaves as it should.
 
 Only **grain-size-controlled** verdicts are trusted. A raw-concentration version was tried
 and rejected: sandy near-cage sediment slips under a concentration threshold regardless of
@@ -132,7 +138,7 @@ distribution-mixture caveat (unreliable where there is no clear two-population s
 cobalt). The honest headline is the coverage gap: the classification is trustworthy where
 aluminium exists, which is most of the open-shelf data but almost none of the near-cage data,
 so the aquaculture sites remain largely unassessable from these measurements alone. This is a
-synthesis of the [Background](./background.qmd),
+synthesis of the [Global Background](./background.qmd),
 [Enrichment Factor](./background-ef.qmd) and
 [Distribution-Mixture](./background-mixture.qmd) pages; iodine is too sparse throughout.
 :::

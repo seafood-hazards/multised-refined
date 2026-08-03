@@ -7,7 +7,7 @@ subtitle: "Backgrounds after removing the grain-size effect, three ways"
 th { white-space: nowrap; }
 ```
 
-The raw [Background](./background.qmd) page mixes grain size in: muddy sediment carries
+The raw [Global Background](./background.qmd) page mixes grain size in: muddy sediment carries
 more metal, and the coast tends to be muddier, so part of the coastal signal is grain
 size rather than pressure. Normalising to a grain-size proxy strips that out. Because the
 choice of proxy matters, this page does it **three ways** side by side, per element and
@@ -101,6 +101,6 @@ Normalising helps but does not settle the background: it trades the grain-size a
 for a normaliser assumption. Aluminium is the most defensible single choice, but its bulk
 coverage is only about a third of the samples; the mud basis is the most direct grain-size
 measure but excludes sandy samples and is unstable at low mud. Read alongside the raw
-[Background](./background.qmd) and the [Pressure-Based Background](./background-pressure.qmd)
+[Global Background](./background.qmd) and the [Pressure-Based Background](./background-pressure.qmd)
 pages, not on its own. Iodine and selenium remain too sparse to normalise reliably.
 :::

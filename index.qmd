@@ -74,22 +74,29 @@ merge, then a single database from there:
 - [Tables](./refined-tables.qmd): a read-only browser over the database, running in your
   browser via WebAssembly.
 
-**Analyses** on the refined database (the pristine / background-sediment work):
+**Background** on the refined database, four aquaculture-free ways to estimate a natural
+baseline per element and fraction:
 
-- [Background](./background.qmd): a natural background per element and fraction, the
+- [Global Background](./background.qmd): a natural background per element and fraction, the
   global distribution versus an offshore subset.
 - [Grain-Size-Normalised Background](./background-gsnorm.qmd): the same after removing
   the grain-size effect, normalised three ways (metal/Al, metal/Fe, metal/mud).
-- [Pressure-Based Background](./background-pressure.qmd): background from distance to
-  aquaculture, and the near-cage enrichment (Norway).
-- [Enrichment Factor](./background-ef.qmd): classifying samples against a local
-  background (EF), and testing whether the aquaculture signal survives normalisation.
 - [Distribution-Mixture Background](./background-mixture.qmd): separating a background
   population from an enriched one from the distribution alone, and checking it against
   the spatial background.
-- [Pristine Classification](./background-pristine.qmd): combining the background
-  estimates into a per-sample verdict, and where it cannot be made (the aquaculture
-  sites lack the aluminium needed).
+- [Pressure-Based Background](./background-pressure.qmd): background from distance to
+  aquaculture, and the near-cage enrichment (Norway), used to evaluate the enrichment.
+
+**Enrichment**, turning the background into a per-sample verdict, with the aquaculture
+pressure held back for evaluation:
+
+- [Enrichment Factor](./background-ef.qmd): classifying samples against a local (offshore,
+  aquaculture-free) background (EF), then testing whether the reported enrichment matches
+  the aquaculture pressure gradient.
+- [Pristine Classification](./background-pristine.qmd): combining the background estimates
+  into a per-sample verdict (using no aquaculture information), evaluated against distance
+  to the cages, and noting where it cannot be made (the aquaculture sites lack the
+  aluminium needed).
 
 A multi-element pollution index may be added later.
 
