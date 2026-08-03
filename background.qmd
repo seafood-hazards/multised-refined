@@ -1,5 +1,5 @@
 ---
-title: "Background"
+title: "Global Background"
 subtitle: "Estimating a natural background concentration per element and fraction"
 ---
 

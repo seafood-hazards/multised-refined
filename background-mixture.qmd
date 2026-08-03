@@ -79,7 +79,7 @@ ggplot() +
 ## The threshold, and does it agree with the offshore background?
 
 The mixture threshold is a background upper bound derived from the distribution alone. The
-offshore 90th percentile (from the [Background](./background.qmd) page) is one derived from
+offshore 90th percentile (from the [Global Background](./background.qmd) page) is one derived from
 location. They come from unrelated information, so agreement is a real cross-check.
 
 ```{r}

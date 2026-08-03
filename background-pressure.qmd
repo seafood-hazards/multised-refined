@@ -17,6 +17,13 @@ For each element and fraction, the value is summarised in distance-to-aquacultur
 (< 1 km, 1-5 km, 5-20 km, > 20 km). The **> 20 km** band is read as the background; the
 ratio of the nearest band to it (the 90th percentiles) is the near-cage enrichment.
 
+Because it is built from the aquaculture positions, this pressure gradient is held out of
+the background and pristine estimates themselves. Its role is to **evaluate** them: the
+[Enrichment Factor](./background-ef.qmd) and [Pristine
+Classification](./background-pristine.qmd) pages are estimated without aquaculture
+information, and this page is the yardstick that the enrichment they report matches the
+real pressure.
+
 ```{r}
 #| label: setup
 library(dplyr)
@@ -94,6 +101,6 @@ and selenium signals, being feed and redox driven, largely survive it).
 This is Norway only, and "distance to a farm" is a coarse pressure measure (a distant but
 industrial site is not pristine; a near site in a well-flushed location may be clean). The
 > 20 km band is a practical low-pressure background, not a guaranteed pristine one. Read
-with the raw [Background](./background.qmd) and
+with the raw [Global Background](./background.qmd) and
 [Grain-Size-Normalised](./background-gsnorm.qmd) pages to triangulate.
 :::

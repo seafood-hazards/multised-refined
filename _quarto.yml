@@ -22,18 +22,20 @@ website:
             href: db-schema-refined.qmd
           - text: "Tables"
             href: refined-tables.qmd
-      - text: "Analyses"
+      - text: "Background"
         menu:
-          - text: "Background"
+          - text: "Global Background"
             href: background.qmd
           - text: "Grain-Size-Normalised Background"
             href: background-gsnorm.qmd
-          - text: "Pressure-Based Background"
-            href: background-pressure.qmd
-          - text: "Enrichment Factor"
-            href: background-ef.qmd
           - text: "Distribution-Mixture Background"
             href: background-mixture.qmd
+          - text: "Pressure-Based Background"
+            href: background-pressure.qmd
+      - text: "Enrichment"
+        menu:
+          - text: "Enrichment Factor"
+            href: background-ef.qmd
           - text: "Pristine Classification"
             href: background-pristine.qmd
 
