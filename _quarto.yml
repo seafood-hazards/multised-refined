@@ -32,12 +32,16 @@ website:
             href: background-mixture.qmd
           - text: "Pressure-Based Background"
             href: background-pressure.qmd
+          - text: "Background Map"
+            href: background-map.qmd
       - text: "Enrichment"
         menu:
           - text: "Enrichment Factor"
             href: background-ef.qmd
           - text: "Pristine Classification"
             href: background-pristine.qmd
+          - text: "Enrichment Map"
+            href: enrichment-map.qmd
 
 format:
   html:

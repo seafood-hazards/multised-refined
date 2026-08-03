@@ -1,0 +1,203 @@
+---
+title: "Background Map"
+subtitle: "Where the background samples sit, by definition, per element and fraction"
+format:
+  html:
+    page-layout: full
+---
+
+```{=html}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+```
+
+Every sampling site is drawn in **grey**. On top, the sites that qualify as **background**
+under three of the definitions from the Background pages are overlaid in colour, for the
+selected element and fraction:
+
+- **Offshore** (location): more than 10 km from the coast (the
+  [Global Background](./background.qmd) offshore subset).
+- **Below offshore P90** (level): the site value is under the offshore 90th percentile.
+- **Below the mixture threshold** (distribution): the site value is under the
+  [Distribution-Mixture](./background-mixture.qmd) background upper bound.
+
+A site can meet more than one, so the colours are drawn as concentric rings (largest first).
+None of these use aquaculture information. Values are averaged per site for the display, so
+this is a visual overview; the per-measurement counts on the analysis pages are the
+authoritative ones.
+
+{{< include _db-setup.qmd >}}
+
+```{ojs}
+//| output: false
+L = require("https://unpkg.com/leaflet@1.9.4/dist/leaflet.js")
+
+home_lat = 65
+home_lng = 10
+home_zoom = 3
+
+elements = [
+  { label: "Cobalt (Co)",     value: "CO" },
+  { label: "Copper (Cu)",     value: "CU" },
+  { label: "Iodine (I)",      value: "I" },
+  { label: "Manganese (Mn)",  value: "MN" },
+  { label: "Molybdenum (Mo)", value: "MO" },
+  { label: "Selenium (Se)",   value: "SE" },
+  { label: "Zinc (Zn)",       value: "ZN" }
+]
+
+fractions = [
+  { label: "Bulk",          value: "bulk",     clause: "AND m.frac_class = 'bulk'" },
+  { label: "Sieved <63 um", value: "sieved63", clause: "AND m.frac_class = 'sieved' AND m.sieve_um_std = 63" },
+  { label: "Sieved <20 um", value: "sieved20", clause: "AND m.frac_class = 'sieved' AND m.sieve_um_std = 20" }
+]
+
+bg_types = [
+  { key: "offshore", label: "Offshore (>10 km)",        color: "#4477AA", radius: 9 },
+  { key: "belowP90", label: "Below offshore P90",       color: "#228833", radius: 7 },
+  { key: "belowMix", label: "Below mixture threshold",  color: "#EE7733", radius: 5 }
+]
+```
+
+```{ojs}
+//| output: false
+// Per element x fraction thresholds, loaded from the analysis CSVs.
+bg_compare = FileAttachment("data/refined_summary/refined_background_compare.csv").csv({ typed: true })
+mix_comp   = FileAttachment("data/refined_summary/refined_mixture_components.csv").csv({ typed: true })
+
+thresholds = {
+  const m = new Map()
+  const put = (k, f) => { const o = m.get(k) ?? {}; f(o); m.set(k, o) }
+  for (const r of bg_compare) put(r.symbol + "|" + r.cat, o => o.p90 = r.p90_off10)
+  for (const r of mix_comp)   put(r.symbol + "|" + r.cat, o => o.mix = r.threshold)
+  return m
+}
+```
+
+```{ojs}
+//| panel: sidebar
+
+viewof selected_element = Inputs.select(elements, {
+  label: "Element:", format: d => d.label, value: elements[1]
+})
+
+viewof selected_fraction = Inputs.select(fractions, {
+  label: "Fraction:", format: d => d.label, value: fractions[0]
+})
+
+viewof shown_types = Inputs.checkbox(bg_types, {
+  label: "Show background:", format: d => d.label, value: bg_types
+})
+```
+
+```{ojs}
+//| panel: fill
+
+map_data = db.query(`
+  SELECT si.latitude  AS latitude,
+         si.longitude AS longitude,
+         AVG(m.value_std)          AS avg_value,
+         MAX(si.dist_to_coast)     AS dist_coast
+  FROM measurement m
+    JOIN subsample sub ON sub.subsample_id = m.subsample_id
+    JOIN event e       ON e.event_id       = sub.event_id
+    JOIN site si       ON si.site_id       = e.site_id
+  WHERE m.symbol = '${selected_element.value}'
+    ${selected_fraction.clause}
+    AND m.outlier_flag IS NULL
+    AND si.latitude IS NOT NULL AND si.longitude IS NOT NULL
+  GROUP BY si.latitude, si.longitude
+`)
+
+th = thresholds.get(selected_element.value + "|" + selected_fraction.value) ?? {}
+
+classify_bg = (d, key) =>
+    key === "offshore" ? (d.dist_coast != null && d.dist_coast > 10)
+  : key === "belowP90" ? (th.p90 != null && d.avg_value != null && d.avg_value < th.p90)
+  : key === "belowMix" ? (th.mix != null && d.avg_value != null && d.avg_value < th.mix)
+  : false
+
+fmtVal = v => v == null ? "N/A" : (v >= 1000 ? v.toFixed(0) : v.toFixed(2)) + " mg/kg"
+
+{
+  const container = html`<div class="map-container"><div id="map"></div></div>`
+  yield container
+
+  if (!container._map) {
+    const map = L.map(container.querySelector("#map"), { zoomControl: true })
+      .setView([home_lat, home_lng], home_zoom)
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors"
+    }).addTo(map)
+
+    const HomeControl = L.Control.extend({
+      options: { position: "topleft" },
+      onAdd(map) {
+        const btn = L.DomUtil.create("a", "leaflet-home-button")
+        btn.innerHTML = '<i class="fa fa-expand" aria-hidden="true"></i>'
+        btn.title = "Reset view"
+        L.DomEvent.on(btn, "click", e => {
+          L.DomEvent.stopPropagation(e)
+          map.setView([home_lat, home_lng], home_zoom)
+        })
+        return btn
+      }
+    })
+    new HomeControl().addTo(map)
+
+    const LegendControl = L.Control.extend({
+      options: { position: "bottomright" },
+      onAdd() { const d = L.DomUtil.create("div", "legend"); d.id = "map-legend"; return d }
+    })
+    new LegendControl().addTo(map)
+
+    container._map = map
+    container._markers = L.layerGroup().addTo(map)
+  }
+
+  const { _map: map, _markers: markers } = container
+
+  const legendEl = map.getContainer().querySelector("#map-legend")
+  if (legendEl) {
+    legendEl.innerHTML =
+      `<div class="legend-title">${selected_element.label}</div>` +
+      `<div style="font-size:11px;color:#555;margin-bottom:4px">${selected_fraction.label}</div>` +
+      `<div class="legend-row"><span class="legend-swatch" style="background:#bbb"></span>All sites</div>` +
+      shown_types.map(t =>
+        `<div class="legend-row"><span class="legend-swatch" style="background:${t.color}"></span>${t.label}</div>`
+      ).join("")
+  }
+
+  markers.clearLayers()
+
+  // grey base: every site with data
+  for (const d of map_data) {
+    L.circleMarker([d.latitude, d.longitude], {
+      radius: 3, fillColor: "#bbb", color: "#999", weight: 0.4, fillOpacity: 0.5, opacity: 0.6
+    }).addTo(markers)
+  }
+
+  // background overlays, largest ring first so overlaps stay visible
+  for (const t of shown_types) {
+    for (const d of map_data) {
+      if (!classify_bg(d, t.key)) continue
+      L.circleMarker([d.latitude, d.longitude], {
+        radius: t.radius, fillColor: t.color, color: "#333", weight: 0.6, fillOpacity: 0.75, opacity: 1
+      }).bindTooltip(
+        `<b>${t.label}</b><br>${selected_element.label}: ${fmtVal(d.avg_value)}`,
+        { sticky: true }
+      ).addTo(markers)
+    }
+  }
+}
+
+counts = ({
+  all: map_data.length,
+  offshore: map_data.filter(d => classify_bg(d, "offshore")).length,
+  belowP90: map_data.filter(d => classify_bg(d, "belowP90")).length,
+  belowMix: map_data.filter(d => classify_bg(d, "belowMix")).length
+})
+
+map_data.length === 0
+  ? md`*No data for this selection.*`
+  : md`**${selected_element.label}** · ${selected_fraction.label} · **${counts.all}** sites · offshore **${counts.offshore}** · below P90 **${counts.belowP90}** · below mixture **${counts.belowMix}**`
+```
