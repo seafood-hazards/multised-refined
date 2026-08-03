@@ -86,6 +86,8 @@ baseline per element and fraction:
   the spatial background.
 - [Pressure-Based Background](./background-pressure.qmd): background from distance to
   aquaculture, and the near-cage enrichment (Norway), used to evaluate the enrichment.
+- [Background Map](./background-map.qmd): all sites in grey with the offshore, below-P90
+  and below-mixture background samples overlaid, per element and fraction.
 
 **Enrichment**, turning the background into a per-sample verdict, with the aquaculture
 pressure held back for evaluation:
@@ -97,6 +99,8 @@ pressure held back for evaluation:
   into a per-sample verdict (using no aquaculture information), evaluated against distance
   to the cages, and noting where it cannot be made (the aquaculture sites lack the
   aluminium needed).
+- [Enrichment Map](./enrichment-map.qmd): all sites in grey with the potentially pristine
+  samples (EF and strict) overlaid, per element and fraction.
 
 A multi-element pollution index may be added later.
 
