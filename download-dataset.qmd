@@ -10,6 +10,12 @@ relational structure, the surrogate keys, the provenance and the uncertainty / m
 detail. The original **source** of each measurement is kept, so results can be traced back
 or filtered by programme.
 
+It also carries **this site's own verdicts**: whether each measurement is pristine, and
+whether it sits at or below background, under the definitions the analysis pages use.
+Those columns are described under [The verdict columns](#the-verdict-columns) below, with
+the reference values behind them, so any of it can be recomputed or replaced with your own
+rule.
+
 The file is a **tab-separated, gzip-compressed** text file (`.tsv.gz`), readable by any
 data tool.
 
@@ -56,6 +62,54 @@ dict |>
   kable()
 ```
 
+## The verdict columns
+
+Nine of the columns are not measurements but conclusions, carried over from the analysis
+pages so the file can be used without reproducing them.
+
+**Pristine**, from [Pristine Classification](./background-pristine.qmd), is grain-size
+controlled and therefore needs aluminium. Where aluminium is missing the sample is left
+**unclassified** (`classifiable` FALSE, both pristine columns empty) rather than guessed:
+
+- `pristine_ef`: the permissive rule, EF < 1, where EF is the element/Al ratio divided by
+  the offshore background ratio. This is the rule an EFSA submission would use.
+- `pristine_strict`: the conservative rule. EF < 1 **and** below the mixture threshold
+  **and** below the offshore P90, so all three background criteria agree.
+
+**Background** is the weaker question of whether the concentration alone sits in the
+background population. Both are raw-concentration rules, so unlike the pristine columns
+they are **not** grain-size controlled, and a sandy sample can pass on grain size alone:
+
+- `background_p90`: below the offshore P90 for its element and fraction
+  ([Global Background](./background.qmd)).
+- `background_mixture`: below the threshold separating the two fitted populations
+  ([Distribution-Mixture Background](./background-mixture.qmd)).
+
+`ef` is the numeric enrichment factor itself, for anyone who wants a different cutoff than
+1. `bg_ratio_al`, `p90_off` and `mixture_threshold` are the three reference values applied
+to that row, so every verdict in the file can be checked against the file alone.
+
+```{r}
+#| label: verdicts
+d |>
+  summarise(across(c(classifiable, pristine_ef, pristine_strict,
+                     background_p90, background_mixture),
+                   list(rows = ~sum(!is.na(.x)), true = ~sum(.x, na.rm = TRUE)))) |>
+  pivot_longer(everything(), names_to = c("Column", ".value"), names_sep = "_(?=rows$|true$)") |>
+  mutate(`Rows with a verdict` = format(rows, big.mark = ","),
+         `TRUE` = format(true, big.mark = ","),
+         `Share TRUE` = sprintf("%.1f%%", 100 * true / rows)) |>
+  select(Column, `Rows with a verdict`, `TRUE`, `Share TRUE`) |>
+  kable(align = "lrrr")
+```
+
+::: {.callout-note}
+The verdicts are computed on the same basis as the analysis pages: fractions `bulk`,
+`sieved63` and `sieved20` only, outlier-flagged rows excluded, non-positive values
+excluded. Rows outside that scope carry empty verdicts rather than verdicts derived some
+other way, which is why the counts above fall short of the row total.
+:::
+
 ## How the fractions and coverage look
 
 Counts of rows per element and fraction (bulk and the sieve cutoffs are never pooled;
@@ -89,3 +143,7 @@ d |> head(8) |> kable()
   on this site exclude flagged rows, and you probably want to as well.
 - A site is identified by its `latitude` / `longitude` (rounded to 3 decimal places); the
   same location can appear across several years.
+- The verdict columns are a starting point, not a ruling. `pristine_ef` is per element and
+  fraction, not a site-level judgement, and the classifiable half of the data is not a
+  random half: aluminium is scarcest close to the aquaculture farms, which is exactly where
+  a verdict would matter most.
