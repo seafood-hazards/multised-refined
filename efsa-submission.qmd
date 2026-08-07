@@ -1,0 +1,147 @@
+---
+title: "EFSA Submission v1"
+subtitle: "Mapping the refined database onto the EFSA reporting tool"
+---
+
+```{css, echo=FALSE}
+th {
+  white-space: nowrap;
+}
+```
+
+The page presents the mapping between the refined database and the
+[EFSA Format v1](./efsa-format.qmd) columns, together with how much of the database can
+actually fill each one. The v1 tool asks for catalogue **codes** as well as text, so
+several fields arrive as a text and code pair; the code side is a lookup against the
+catalogues on the format page, not something the database stores.
+
+The later [EFSA Format v2](./efsa-format-v2.qmd) is the model this project now targets.
+This page is kept because v1 is what the original EFSA call describes, and the two ask
+for different things: v1 wants the sediment texture split three ways and the porewater
+chemistry, v2 wants the grain-size handling and the detection limits.
+
+```{r}
+#| label: setup
+library(DBI)
+library(RSQLite)
+library(dplyr)
+library(tibble)
+library(knitr)
+
+con <- dbConnect(SQLite(), "multised_refined.sqlite")
+
+# One candidate submission row per measurement, so every percentage shares a
+# denominator. See the v2 page for the same treatment of the newer model.
+cov <- dbGetQuery(con, "
+  SELECT
+    COUNT(*)                                                        AS n_rows,
+    ROUND(100.0*SUM(m.value_std   IS NOT NULL)/COUNT(*), 1)         AS value_std_pct,
+    ROUND(100.0*SUM(m.unit        IS NOT NULL)/COUNT(*), 1)         AS unit_pct,
+    ROUND(100.0*SUM(mt.method     IS NOT NULL)/COUNT(*), 1)         AS method_pct,
+    ROUND(100.0*SUM(mt.lod        IS NOT NULL)/COUNT(*), 1)         AS lod_pct,
+    ROUND(100.0*SUM(mt.loq        IS NOT NULL)/COUNT(*), 1)         AS loq_pct,
+    ROUND(100.0*SUM(e.date        IS NOT NULL)/COUNT(*), 1)         AS date_pct,
+    ROUND(100.0*SUM(si.latitude   IS NOT NULL)/COUNT(*), 1)         AS coord_pct,
+    ROUND(100.0*SUM(si.municipality IS NOT NULL)/COUNT(*), 1)       AS cm_pct,
+    ROUND(100.0*SUM(s.fines_lt63  IS NOT NULL)/COUNT(*), 1)         AS fines_pct,
+    ROUND(100.0*SUM(nz.corg       IS NOT NULL)/COUNT(*), 1)         AS corg_pct,
+    ROUND(100.0*SUM(nz.al         IS NOT NULL)/COUNT(*), 1)         AS al_pct,
+    ROUND(100.0*SUM(d.doi IS NOT NULL OR d.url IS NOT NULL)/COUNT(*), 1) AS ref_pct
+  FROM measurement m
+  JOIN subsample s   ON m.subsample_id = s.subsample_id
+  JOIN event e       ON s.event_id     = e.event_id
+  JOIN site si       ON e.site_id      = si.site_id
+  JOIN dataset d     ON e.dataset_id   = d.dataset_id
+  LEFT JOIN method mt ON m.method_id   = mt.method_id
+  LEFT JOIN normaliser nz
+         ON nz.subsample_id = m.subsample_id AND nz.frac_class = m.frac_class
+")
+
+pc <- function(x) paste0(format(x, nsmall = 1), "%")
+
+efsa_submission <- tribble(
+  ~Column,          ~Lookup, ~Optionality,           ~`Source Table`, ~`Source Columns`,           ~`Fixed Text`,      ~Coverage,             ~Missing, ~Notes,
+  "sampleId",       NA,      "Mandatory",            "Subsample",     "source + src_subsample_id", NA,                 "100.0%",              NA,       "The provider's own identifier, prefixed with the source",
+  "recId",          "Yes",   "Mandatory",            NA,              NA,                          NA,                 NA,                    NA,       "Generated: sampleId + speciation",
+  "envComp",        NA,      "Mandatory",            NA,              NA,                          "marine sediment",  "100.0%",              NA,       "The whole database is marine sediment",
+  "pristineLoc",    NA,      "Mandatory",            NA,              NA,                          NA,                 pc(cov$al_pct),        NA,       "Derived: the EF verdict from Pristine Classification. Only samples carrying aluminium can be judged",
+  "sampleLocGC",    NA,      "Mandatory",            "Site",          "latitude + longitude",      NA,                 pc(cov$coord_pct),     NA,       NA,
+  "sampleLocCM",    NA,      "Mandatory",            "Site",          "country + municipality",    NA,                 pc(cov$cm_pct),        NA,       "Both from seastamp, so both are present wherever coordinates are",
+  "sampleDate",     NA,      "Mandatory",            "Event",         "date",                      NA,                 pc(cov$date_pct),      NA,       "Falls back to year where no full date was reported",
+  "traceElText",    NA,      "Mandatory",            "Element",       "symbol",                    NA,                 "100.0%",              NA,       NA,
+  "traceElCode",    "Yes",   "Mandatory",            "Element",       NA,                          NA,                 NA,                    NA,       "Catalogue lookup on traceEl",
+  "specText",       NA,      "Mandatory",            "Element",       'symbol + " (Total)"',       NA,                 "100.0%",              NA,       "Only total concentrations are held; no speciation anywhere",
+  "specCode",       "Yes",   "Mandatory",            NA,              NA,                          NA,                 NA,                    NA,       "Catalogue lookup on spec",
+  "conc",           NA,      "Mandatory",            "Measurement",   "value_std",                 NA,                 pc(cov$value_std_pct), NA,       "Standardised to mg/kg dry weight",
+  "unitText",       NA,      "Mandatory",            "Measurement",   "unit",                      NA,                 pc(cov$unit_pct),      NA,       NA,
+  "unitCode",       "Yes",   "Mandatory",            NA,              NA,                          NA,                 NA,                    NA,       "Catalogue lookup on unit",
+  "weightText",     NA,      "Dependent Mandatory",  NA,              NA,                          "dw",               "100.0%",              NA,       "The refined generation carries dry weight only",
+  "weightCode",     "Yes",   "Dependent Mandatory",  NA,              NA,                          NA,                 NA,                    NA,       "Catalogue lookup on weight",
+  "methAnText",     NA,      "Mandatory",            "Method",        "method",                    NA,                 pc(cov$method_pct),    NA,       NA,
+  "methAnCode",     "Yes",   "Mandatory",            NA,              NA,                          NA,                 NA,                    NA,       "Catalogue lookup on methAn",
+  "LOD",            NA,      "Optional",             "Method",        "lod",                       NA,                 pc(cov$lod_pct),       NA,       "Per method and element, not per measurement",
+  "LOQ",            NA,      "Optional",             "Method",        "loq",                       NA,                 pc(cov$loq_pct),       NA,       NA,
+  "accLab",         NA,      "Optional",             NA,              NA,                          NA,                 NA,                    "Yes",    "The laboratory is recorded, its accreditation is not",
+  "phSed",          NA,      "Optional",             NA,              NA,                          NA,                 NA,                    "Yes",    "Not recorded in DB",
+  "TextureSedClay", NA,      "Optional",             NA,              NA,                          NA,                 NA,                    "Yes",    "The database holds one cutoff (below 63 um), so clay cannot be separated from silt",
+  "TextureSedSilt", NA,      "Optional",             NA,              NA,                          NA,                 NA,                    "Yes",    "As above",
+  "TextureSedSand", NA,      "Optional",             "Subsample",     "fines_lt63",                NA,                 pc(cov$fines_pct),     NA,       "Derived: 100 minus the fines fraction, which is the sand fraction by definition",
+  "ocSed",          NA,      "Optional",             "Normaliser",    "corg",                      NA,                 pc(cov$corg_pct),      NA,       "Organic carbon for the same subsample and fraction",
+  "phWater",        NA,      "Optional",             NA,              NA,                          NA,                 NA,                    "Yes",    "Not recorded in DB",
+  "hardWat",        NA,      "Optional",             NA,              NA,                          NA,                 NA,                    "Yes",    "Not recorded in DB",
+  "DOC",            NA,      "Optional",             NA,              NA,                          NA,                 NA,                    "Yes",    "Not recorded in DB",
+  "publicData",     NA,      "Optional",             NA,              NA,                          "Yes",              "100.0%",              NA,       "Every source in this project is a public archive",
+  "refPublication", NA,      "Optional",             "Dataset",       "doi + url",                 NA,                 pc(cov$ref_pct),       NA,       "The source archive, not a paper, for most datasets",
+  "comments",       NA,      "Optional",             NA,              NA,                          NA,                 NA,                    "Yes",    "Not recorded in DB"
+)
+
+efsa_submission <- efsa_submission %>%
+  mutate(across(where(is.character), ~coalesce(.x, "")))
+```
+
+## Data Mapping for Submission
+
+The columns the refined database can fill directly, with the catalogue lookups and the
+unfillable columns held back.
+
+```{r}
+#| label: mapping
+efsa_submission %>%
+  filter(Lookup != "Yes", Missing != "Yes") %>%
+  select(-c(Lookup, Missing))
+```
+
+## Full Data Mapping
+
+Every column of the reporting tool, including the catalogue lookups and the ones nothing
+in the database can supply.
+
+```{r}
+#| label: mapping-full
+efsa_submission %>% select(-Missing)
+```
+
+## Where v1 Asks for More Than v2
+
+```{r}
+#| label: texture
+#| output: asis
+cat(sprintf("**Sediment texture.** v1 wants clay, silt and sand as three separate percentages. The refined database holds a single grain-size cutoff, the fines fraction below 63 um, present for **%s** of measurements. Sand follows from it directly (everything above the cutoff), but clay and silt cannot be told apart, so two of the three columns stay empty no matter which source the sample came from.\n\n",
+            pc(cov$fines_pct)))
+cat("**Porewater chemistry.** `phSed`, `phWater`, `hardWat` and `DOC` are not measured by any of the five sources. They were never part of a sediment trace-element programme, so nothing downstream can recover them.\n")
+```
+
+## Data Export Method
+
+As the EFSA submission tool is an Excel file containing embedded macros, the data must be
+mapped column by column rather than through a standard row-based export. This approach
+ensures that the structure of the submission file is not disrupted.
+
+The same two constraints as for v2 apply before any of this: the sampling-year window and
+the pristine verdict. They are set out on
+[EFSA Submission v2](./efsa-submission-v2.qmd#two-constraints-before-submitting).
+
+```{r}
+#| label: teardown
+invisible(dbDisconnect(con))
+```

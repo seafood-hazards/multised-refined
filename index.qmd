@@ -104,6 +104,19 @@ pressure held back for evaluation:
 
 A multi-element pollution index may be added later.
 
+**EFSA Submission**, the reporting formats this collection is meant to feed, and what the
+refined database can put into each of their columns:
+
+- [EFSA Format v1](./efsa-format.qmd) and [EFSA Format v2](./efsa-format-v2.qmd): the
+  column definitions and catalogues of the EFSA reporting tool and of the later FHF marine
+  sediment data model. These describe the formats themselves, so they are the same on every
+  site in this project.
+- [EFSA Submission v1](./efsa-submission.qmd) and
+  [EFSA Submission v2](./efsa-submission-v2.qmd): the mapping from the refined tables onto
+  those columns, with the share of measurements that can fill each one, and the two
+  constraints (sampling year, and a pristine verdict that needs aluminium) that cut the
+  collection down before any of it is submitted.
+
 **Downloads**
 
 - [Database](./download-database.qmd): the full refined database as a single SQLite file.
