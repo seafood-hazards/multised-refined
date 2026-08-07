@@ -1,0 +1,168 @@
+---
+title: "EFSA Submission v2"
+subtitle: "Mapping the refined database onto the FHF marine sediment data model"
+---
+
+```{css, echo=FALSE}
+th {
+  white-space: nowrap;
+}
+```
+
+The page presents the mapping between the refined database and the
+[EFSA Format v2](./efsa-format-v2.qmd) columns, together with how much of the database
+can actually fill each one.
+
+The refined generation is the one built for this submission: it is already cut down to
+the seven target elements, harmonised to mg/kg dry weight, and carries the
+grain-size, organic-carbon and location context the data model asks for. The
+[DB Schema](./db-schema-refined.qmd) page describes the tables named below.
+
+```{r}
+#| label: setup
+library(DBI)
+library(RSQLite)
+library(dplyr)
+library(tibble)
+library(knitr)
+
+con <- dbConnect(SQLite(), "multised_refined.sqlite")
+
+# One pass over the measurement table, joined out to everything a submission row
+# needs, so every percentage below is a share of the same denominator: one
+# candidate submission row per measurement.
+cov <- dbGetQuery(con, "
+  SELECT
+    COUNT(*)                                                        AS n_rows,
+    ROUND(100.0*SUM(m.value       IS NOT NULL)/COUNT(*), 1)         AS value_pct,
+    ROUND(100.0*SUM(m.value_std   IS NOT NULL)/COUNT(*), 1)         AS value_std_pct,
+    ROUND(100.0*SUM(m.unit        IS NOT NULL)/COUNT(*), 1)         AS unit_pct,
+    ROUND(100.0*SUM(m.value_sd    IS NOT NULL)/COUNT(*), 1)         AS sd_pct,
+    ROUND(100.0*SUM(m.frac_class  IS NOT NULL)/COUNT(*), 1)         AS frac_pct,
+    ROUND(100.0*SUM(mt.method     IS NOT NULL)/COUNT(*), 1)         AS method_pct,
+    ROUND(100.0*SUM(mt.lod        IS NOT NULL)/COUNT(*), 1)         AS lod_pct,
+    ROUND(100.0*SUM(mt.loq        IS NOT NULL)/COUNT(*), 1)         AS loq_pct,
+    ROUND(100.0*SUM(mt.limit_unit IS NOT NULL)/COUNT(*), 1)         AS limit_unit_pct,
+    ROUND(100.0*SUM(s.depth_from  IS NOT NULL)/COUNT(*), 1)         AS depth_pct,
+    ROUND(100.0*SUM(e.date        IS NOT NULL)/COUNT(*), 1)         AS date_pct,
+    ROUND(100.0*SUM(si.sea_name   IS NOT NULL)/COUNT(*), 1)         AS sea_pct,
+    ROUND(100.0*SUM(si.latitude   IS NOT NULL)/COUNT(*), 1)         AS coord_pct,
+    ROUND(100.0*SUM(nz.corg       IS NOT NULL)/COUNT(*), 1)         AS corg_pct,
+    ROUND(100.0*SUM(nz.al         IS NOT NULL)/COUNT(*), 1)         AS al_pct,
+    ROUND(100.0*SUM(e.year >= 2009)/COUNT(*), 1)                    AS recent_pct,
+    ROUND(100.0*SUM(e.year >= 2009 AND nz.al IS NOT NULL)/COUNT(*), 1) AS both_pct
+  FROM measurement m
+  JOIN subsample s   ON m.subsample_id = s.subsample_id
+  JOIN event e       ON s.event_id     = e.event_id
+  JOIN site si       ON e.site_id      = si.site_id
+  LEFT JOIN method mt ON m.method_id   = mt.method_id
+  LEFT JOIN normaliser nz
+         ON nz.subsample_id = m.subsample_id AND nz.frac_class = m.frac_class
+")
+
+pc <- function(x) paste0(format(x, nsmall = 1), "%")
+
+efsa_submission_v2 <- tribble(
+  ~Column,            ~Optionality,  ~`Source Table`, ~`Source Columns`,          ~`Fixed Text`, ~Coverage,             ~Missing, ~Notes,
+  "sampleId",         "Recommended", "Subsample",     "source + src_subsample_id", NA,           "100.0%",              NA,       "The provider's own identifier, prefixed with the source",
+  "samplingStrategy", "Recommended", NA,              NA,                          NA,           NA,                    "Yes",    "Not recorded in DB",
+  "pristine",         "Mandatory",   NA,              NA,                          NA,           pc(cov$al_pct),        NA,       "Derived: the EF verdict from Pristine Classification. Only samples carrying aluminium can be judged",
+  "collDate",         "Mandatory",   "Event",         "date",                      NA,           pc(cov$date_pct),      NA,       "Falls back to year where no full date was reported",
+  "placeColl",        "Mandatory",   "Site",          "sea_name",                  NA,           pc(cov$sea_pct),       NA,       "IHO sea area from seastamp. Needs mapping onto the shorter seas catalogue",
+  "lat",              "Recommended", "Site",          "latitude",                  NA,           pc(cov$coord_pct),     NA,       NA,
+  "lon",              "Recommended", "Site",          "longitude",                 NA,           pc(cov$coord_pct),     NA,       NA,
+  "sedDepth",         "Mandatory",   "Subsample",     "depth_from + depth_to",     NA,           pc(cov$depth_pct),     NA,       "Derived: map intervals to 0-5cm / 5-40cm / >40cm categories",
+  "traceEl",          "Mandatory",   "Element",       "symbol + name",             NA,           "100.0%",              NA,       "The 7 targets are the whole element table",
+  "value",            "Mandatory",   "Measurement",   "value",                     NA,           pc(cov$value_pct),     NA,       "As reported by the source",
+  "sd",               "Optional",    "Measurement",   "value_sd",                  NA,           pc(cov$sd_pct),        NA,       NA,
+  "unit",             "Mandatory",   "Measurement",   "unit",                      NA,           pc(cov$unit_pct),      NA,       NA,
+  "resultType",       "Recommended", NA,              NA,                          "dry weight", "100.0%",              NA,       "The refined generation carries dry weight only",
+  "moisture",         "Recommended", NA,              NA,                          NA,           NA,                    "Yes",    "Not recorded in DB",
+  "convertedValue",   "Mandatory",   "Measurement",   "value_std",                 NA,           pc(cov$value_std_pct), NA,       "Already mg/kg dry weight",
+  "extractionClass",  "Mandatory",   "Method",        "method + method_description", NA,         pc(cov$method_pct),    NA,       "Derived: map the analytical method to an extraction class",
+  "methAn",           "Mandatory",   "Method",        "method",                    NA,           pc(cov$method_pct),    NA,       NA,
+  "validatedMethod",  "Recommended", NA,              NA,                          NA,           NA,                    "Yes",    "Not recorded in DB",
+  "LOD",              "Mandatory",   "Method",        "lod",                       NA,           pc(cov$lod_pct),       NA,       "Per method and element, not per measurement",
+  "LODUnit",          "Mandatory",   "Method",        "limit_unit",                NA,           pc(cov$limit_unit_pct), NA,      NA,
+  "LOQ",              "Recommended", "Method",        "loq",                       NA,           pc(cov$loq_pct),       NA,       NA,
+  "LOQUnit",          "Recommended", "Method",        "limit_unit",                NA,           pc(cov$limit_unit_pct), NA,      NA,
+  "accLab",           "Mandatory",   NA,              NA,                          NA,           NA,                    "Yes",    "The laboratory is recorded, its accreditation is not",
+  "phSed",            "Optional",    NA,              NA,                          NA,           NA,                    "Yes",    "Not recorded in DB",
+  "sieve",            "Mandatory",   "Measurement",   "frac_class + sieve_um_std", NA,           pc(cov$frac_pct),      NA,       "frac_class is bulk or sieved for every row; the cutoff itself is known less often",
+  "bulkAnalysis",     "Mandatory",   "Measurement",   "frac_class",                NA,           pc(cov$frac_pct),      NA,       "Derived: yes where frac_class is bulk",
+  "ocSed",            "Mandatory",   "Normaliser",    "corg",                      NA,           pc(cov$corg_pct),      NA,       "Organic carbon for the same subsample and fraction",
+  "notes",            "Recommended", NA,              NA,                          NA,           NA,                    "Yes",    "Not recorded in DB"
+)
+
+efsa_submission_v2 <- efsa_submission_v2 %>%
+  mutate(across(where(is.character), ~coalesce(.x, "")))
+```
+
+## Data Mapping for Submission
+
+The columns the refined database can fill, either from a table or with a fixed value.
+
+```{r}
+#| label: mapping
+efsa_submission_v2 %>%
+  filter(Missing != "Yes") %>%
+  select(-Missing)
+```
+
+## Full Data Mapping
+
+Every column of the data model, including the ones nothing in the database can supply.
+
+```{r}
+#| label: mapping-full
+efsa_submission_v2 %>% select(-Missing)
+```
+
+## What the Coverage Column Means
+
+Each percentage is a share of the same denominator: one candidate submission row per
+measurement in the refined database.
+
+```{r}
+#| label: denominator
+#| output: asis
+cat(sprintf("There are **%s** measurement rows, so a column at 50%% would arrive filled for about %s of them.\n",
+            format(cov$n_rows, big.mark = ","),
+            format(round(cov$n_rows / 2), big.mark = ",")))
+```
+
+A low number is not necessarily a gap in this project. `sd`, `LOQ` and the laboratory
+detail were simply never reported by most of the five sources, and no amount of
+processing recovers them. The mandatory columns are the ones worth reading closely:
+`ocSed` and the derived `pristine` verdict are the two that fall well short of complete.
+
+## Two Constraints Before Submitting
+
+::: {.callout-important}
+```{r}
+#| label: constraints
+#| output: asis
+cat(sprintf("**Sampling year.** The EFSA call asks for samples collected in the last 15 years (2009 onwards). **%s** of the measurements in the refined database qualify, the collection reaching back to 1971.\n\n",
+            pc(cov$recent_pct)))
+cat(sprintf("**Pristine, and classifiable.** The call asks for pristine locations. The verdict is not stored in the database; it comes from the [Pristine Classification](./background-pristine.qmd) analysis, which needs aluminium to normalise for grain size. Aluminium is present for **%s** of measurements, which makes this the harder of the two constraints, and it is scarcest exactly where the pressure is highest, so a submission built on this rule is weighted toward offshore samples.\n\n",
+            pc(cov$al_pct)))
+cat(sprintf("The two overlap, so neither percentage is the size of the final submission: **%s** of measurements pass both.\n",
+            pc(cov$both_pct)))
+```
+:::
+
+## Data Export Method
+
+As the submission tool is an Excel file, the data must be mapped column by column rather
+than through a standard row-based export. This approach ensures that the structure of the
+submission file is not disrupted.
+
+The [Dataset](./download-dataset.qmd) download is the closest thing to a starting point:
+one flat row per measurement, already joined across the tables named above. It does not
+carry the method limits or the standard deviation, so those come from the
+[database](./download-database.qmd) itself.
+
+```{r}
+#| label: teardown
+invisible(dbDisconnect(con))
+```
