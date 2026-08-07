@@ -90,6 +90,106 @@ library(tibble)
 library(knitr)
 ```
 
+The nine tables below are in the same order as the
+[merged schema](https://seafood-hazards.github.io/multised-merged/db-schema-merged.html),
+so the two pages can be read side by side: the seven shared with merged first, then
+`normaliser` and `aquaculture`, which exist only here.
+
+## dataset
+
+One row per data-collection campaign. Carried over from the merged database unchanged.
+
+```{r}
+tribble(
+  ~Column,          ~Type,     ~Meaning,
+  "dataset_id",     "INTEGER", "Primary key.",
+  "dataset_name",   "TEXT",    "Name of the data-collection campaign / dataset.",
+  "dataset_code",   "TEXT",    "Source-native dataset code, where recorded.",
+  "dataset_group",  "TEXT",    "Dataset grouping, where recorded.",
+  "source",         "TEXT",    "Source database name.",
+  "source_type",    "TEXT",    "Kind of source (e.g. national, international).",
+  "url",            "TEXT",    "Source URL, where recorded.",
+  "doi",            "TEXT",    "Dataset DOI, where recorded.",
+  "country",        "TEXT",    "Country of origin.",
+  "region",         "TEXT",    "Marine region, where recorded.",
+  "institute",      "TEXT",    "Institute responsible for the data.",
+  "institute_code", "TEXT",    "Institute code, where recorded.",
+  "accessed",       "TEXT",    "Date the source was accessed.",
+  "src_dataset_id", "TEXT",    "Original source-prefixed key (provenance)."
+) |> kable()
+```
+
+## site
+
+One row per geographic location. The geo-enrichment is carried over from merged; the
+last three columns are **added here** for the pressure and repeat-sampling analyses.
+
+```{r}
+tribble(
+  ~Column,               ~Type,     ~Meaning,
+  "site_id",             "INTEGER", "Primary key.",
+  "latitude",            "REAL",    "Latitude in decimal degrees.",
+  "longitude",           "REAL",    "Longitude in decimal degrees.",
+  "depth",               "REAL",    "Water depth (m), where recorded.",
+  "country",             "TEXT",    "Nearest country.",
+  "country_code",        "TEXT",    "ISO country code.",
+  "dist_to_coast",       "REAL",    "Distance to nearest coastline (km).",
+  "municipality",        "TEXT",    "Nearest municipality.",
+  "sea_name",            "TEXT",    "Name of the sea or ocean body.",
+  "dist_to_aquaculture", "REAL",    "Distance to nearest Norwegian aquaculture site (km); Norway sites only, else NULL.",
+  "aqua_id",             "INTEGER", "Added here: -> aquaculture, the nearest aquaculture site (Norway only, else NULL).",
+  "source",              "TEXT",    "Source database name.",
+  "src_site_id",         "TEXT",    "Original source-prefixed key (provenance).",
+  "repeat_group",        "TEXT",    "Added here: location cell (lat/lon to 2 dp, ~1.1 km) for repeat-sampling grouping.",
+  "n_years",             "INTEGER", "Added here: distinct sampling years at that cell (over all dated events)."
+) |> kable()
+```
+
+## event
+
+One row per sampling event. Carried over from the merged database unchanged.
+
+```{r}
+tribble(
+  ~Column,         ~Type,     ~Meaning,
+  "event_id",      "INTEGER", "Primary key.",
+  "dataset_id",    "INTEGER", "-> dataset.",
+  "site_id",       "INTEGER", "-> site.",
+  "year",          "INTEGER", "Year of the sampling event.",
+  "date",          "TEXT",    "Date of the sampling event, where recorded.",
+  "sampling_tool", "TEXT",    "Sampling gear, descriptive name.",
+  "n_layers",      "INTEGER", "Number of subsamples (depth layers) under the event.",
+  "source",        "TEXT",    "Source database name.",
+  "src_event_id",  "TEXT",    "Original source-prefixed key (provenance)."
+) |> kable()
+```
+
+## subsample
+
+Physical properties of a depth slice, including the derived grain-size fines. Depths are
+kept **raw**: no banding is applied, so the analyses that need bands choose their own.
+
+```{r}
+tribble(
+  ~Column,             ~Type,     ~Meaning,
+  "subsample_id",      "INTEGER", "Primary key.",
+  "event_id",          "INTEGER", "-> event.",
+  "depth_from",        "REAL",    "Top of the slice, cm (raw, not banded), else NULL.",
+  "depth_to",          "REAL",    "Bottom of the slice, cm, else NULL.",
+  "depth_flag",        "TEXT",    "'implausible' where the reported depth was removed (Vannmiljø only), else NULL.",
+  "fe_exist",          "INTEGER", "1/0: an Fe value exists for this subsample.",
+  "al_exist",          "INTEGER", "1/0: an Al value exists.",
+  "org_exist",         "INTEGER", "1/0: an organic carbon value exists.",
+  "comp_exist",        "INTEGER", "1/0: grain-size composition exists.",
+  "target_frac_class", "TEXT",    "Target-fraction summary: 'bulk', 'sieved', or 'mixed', else NULL.",
+  "target_sieve_um",   "REAL",    "Target sieve cutoff where unambiguous, else NULL.",
+  "fines_lt63",        "REAL",    "% finer than 63 um (mud content), else NULL.",
+  "fines_basis",       "TEXT",    "How fines_lt63 was derived.",
+  "source",            "TEXT",    "Source database name.",
+  "src_subsample_id",  "TEXT",    "Original source-prefixed key (provenance)."
+) |> kable()
+```
+
 ## measurement
 
 One row per target-element reading, bulk and sieved told apart by `frac_class` (never
@@ -102,29 +202,68 @@ tribble(
   "measurement_id",    "INTEGER", "Primary key.",
   "subsample_id",      "INTEGER", "-> subsample.",
   "symbol",            "TEXT",    "Target element (-> element); one of CO CU I MN MO SE ZN.",
-  "frac_class",        "TEXT",    "Sediment fraction: 'bulk' or 'sieved'.",
   "value",             "REAL",    "Value in the original unit.",
   "unit",              "TEXT",    "Original reporting unit.",
   "value_std",         "REAL",    "Standardised value, mg/kg.",
   "value_sd",          "REAL",    "SD across replicates, else NULL.",
   "n_rep",             "INTEGER", "Replicates averaged (1 = single).",
   "value_uncrt",       "REAL",    "Analytical uncertainty, mg/kg, else NULL.",
-  "method_id",         "INTEGER", "-> method.",
-  "ratio_fe",          "REAL",    "value_std / Fe (same subsample, fraction), else NULL.",
-  "ratio_al",          "REAL",    "value_std / Al, else NULL.",
-  "ratio_corg",        "REAL",    "value_std / organic carbon, else NULL.",
+  "frac_class",        "TEXT",    "Sediment fraction: 'bulk' or 'sieved'.",
   "sieve_um_std",      "REAL",    "Harmonised sieve cutoff (um); NULL for bulk.",
   "sieve_class",       "TEXT",    "Sieve label, e.g. '<63um'; NULL for bulk.",
+  "method_id",         "INTEGER", "-> method.",
   "source",            "TEXT",    "Source database name.",
   "src_measurement_id","TEXT",    "Original key (provenance).",
-  "outlier_flag",      "TEXT",    "Distributional outlier marker: 'high' / 'low', else NULL."
+  "outlier_flag",      "TEXT",    "Distributional outlier marker: 'high' / 'low', else NULL.",
+  "ratio_fe",          "REAL",    "Added here: value_std / Fe (same subsample, fraction), else NULL.",
+  "ratio_al",          "REAL",    "Added here: value_std / Al, else NULL.",
+  "ratio_corg",        "REAL",    "Added here: value_std / organic carbon, else NULL."
+) |> kable()
+```
+
+## element
+
+The shared element lookup, cut down to the 7 targets. A single vocabulary across all
+sources, so it carries **no** `source` column.
+
+```{r}
+tribble(
+  ~Column,    ~Type,  ~Meaning,
+  "symbol",   "TEXT", "Primary key: element in the ICES name (CO, CU, I, MN, MO, SE, ZN).",
+  "name",     "TEXT", "Full element name.",
+  "category", "TEXT", "Measurand class: 'target' for every row here.",
+  "cas",      "TEXT", "CAS registry number, where known."
+) |> kable()
+```
+
+## method
+
+One row per distinct analytical method, keeping the detection limits. Carried over from
+the merged database, restricted to the methods the target measurements use.
+
+```{r}
+tribble(
+  ~Column,              ~Type,     ~Meaning,
+  "method_id",          "INTEGER", "Primary key.",
+  "symbol",             "TEXT",    "-> element.",
+  "method",             "TEXT",    "Analytical technique (e.g. ICP-MS, ICP-AES).",
+  "method_description", "TEXT",    "Free-text method description, where recorded.",
+  "lab",                "TEXT",    "Laboratory that performed the analysis, where recorded.",
+  "lab_name",           "TEXT",    "Full laboratory name, where recorded.",
+  "lod",                "REAL",    "Limit of detection, where recorded.",
+  "loq",                "REAL",    "Limit of quantification, where recorded.",
+  "limit_unit",         "TEXT",    "Reporting unit of lod / loq.",
+  "source",             "TEXT",    "Source database name.",
+  "src_method_id",      "TEXT",    "Original source-prefixed key (provenance)."
 ) |> kable()
 ```
 
 ## normaliser
 
-The Fe / Al / organic-carbon values, one wide row per **subsample and fraction** (the
-grain a ratio needs, since a subsample can carry both fractions).
+**This database only.** The Fe / Al / organic-carbon values, one wide row per
+**subsample and fraction** (the grain a ratio needs, since a subsample can carry both
+fractions). In merged these are measurement rows like any other; here they are pulled
+out so a target row can reach its normaliser without a self-join.
 
 ```{r}
 tribble(
@@ -137,43 +276,14 @@ tribble(
 ) |> kable()
 ```
 
-## site (analysis columns)
-
-One row per location. Beyond the geo-enrichment (depth, `dist_to_coast`, `sea_name`,
-`dist_to_aquaculture`), it carries:
-
-```{r}
-tribble(
-  ~Column,        ~Type,     ~Meaning,
-  "aqua_id",      "INTEGER", "-> aquaculture: the nearest aquaculture site (Norway only, else NULL).",
-  "repeat_group", "TEXT",    "Location cell (lat/lon to 2 dp, ~1.1 km) for repeat-sampling grouping.",
-  "n_years",      "INTEGER", "Distinct sampling years at that cell (over all dated events)."
-) |> kable()
-```
-
-## subsample
-
-Physical properties of a depth slice, including the derived grain-size fines.
-
-```{r}
-tribble(
-  ~Column,        ~Type,     ~Meaning,
-  "subsample_id", "INTEGER", "Primary key.",
-  "event_id",     "INTEGER", "-> event.",
-  "depth_from",   "REAL",    "Top of the slice, cm (raw, not banded), else NULL.",
-  "depth_to",     "REAL",    "Bottom of the slice, cm, else NULL.",
-  "fines_lt63",   "REAL",    "% finer than 63 um (mud content), else NULL.",
-  "fines_basis",  "TEXT",    "How fines_lt63 was derived."
-) |> kable()
-```
-
 ## aquaculture
 
-The Norwegian aquaculture reference, a table inside this database, linked from
-`site.aqua_id`. Norwegian marine aquaculture sites (active and closed), from the
-Norwegian Directorate of Fisheries register; **Norway only**, so `aqua_id` and
-`dist_to_aquaculture` are populated only for Norwegian sediment sites. How the table is
-built is on the [clean-analyses site](https://seafood-hazards.github.io/multised-clean/).
+**This database only.** The Norwegian aquaculture reference, folded in as a table rather
+than referenced, so the mart is self-contained. Linked from `site.aqua_id`. Norwegian
+marine aquaculture sites (active and closed), from the Norwegian Directorate of Fisheries
+register; **Norway only**, so `aqua_id` and `dist_to_aquaculture` are populated only for
+Norwegian sediment sites. How the table is built is on the
+[clean-analyses site](https://seafood-hazards.github.io/multised-clean/).
 
 ```{r}
 tribble(
@@ -201,7 +311,9 @@ tribble(
 The refined database is deliberately incomplete by design: it stops at the reusable
 building blocks. The pristine / background analyses that consume it (enrichment factors,
 depth bands, pressure and pristine classification) are the pages this site will add;
-their choices are never frozen into the data. Dimensions carried unchanged (`dataset`,
-`event`, `method` with its detection limits) match the
-[merged schema](https://seafood-hazards.github.io/multised-merged/db-schema-merged.html).
+their choices are never frozen into the data. `dataset`, `event`, `subsample` and
+`method` are carried over unchanged, so their columns are identical to the
+[merged schema](https://seafood-hazards.github.io/multised-merged/db-schema-merged.html);
+`site`, `measurement` and `element` differ from it, and `normaliser` and `aquaculture`
+have no counterpart there.
 :::
