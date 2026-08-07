@@ -1,0 +1,28 @@
+# Assets every release must carry: the site downloads exactly these from
+# releases/latest/download/ at pre-render (see download_resources.R), and the
+# two Downloads pages link to the database and the flat dataset directly. Keep
+# the two lists in step; publish-release.sh reads this one.
+
+multised_refined.sqlite
+multised_refined_dataset.tsv.gz
+refined_background_percentiles.csv
+refined_background_compare.csv
+refined_background_meta.csv
+refined_gsnorm_percentiles.csv
+refined_gsnorm_compare.csv
+refined_gsnorm_meta.csv
+refined_pressure_percentiles.csv
+refined_pressure_compare.csv
+refined_pressure_meta.csv
+refined_ef_background.csv
+refined_ef_dist.csv
+refined_ef_pressure.csv
+refined_ef_meta.csv
+refined_mixture_components.csv
+refined_mixture_hist.csv
+refined_mixture_meta.csv
+refined_pristine_summary.csv
+refined_pristine_coverage.csv
+refined_pristine_validation.csv
+refined_pristine_meta.csv
+refined_dataset_dictionary.csv
