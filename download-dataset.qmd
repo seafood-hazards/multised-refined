@@ -16,7 +16,7 @@ data tool.
 ```{r}
 #| label: download-button
 #| output: asis
-url <- "https://github.com/seafood-hazards/multised-refined/releases/download/v0.1.0/multised_refined_dataset.tsv.gz"
+url <- "https://github.com/seafood-hazards/multised-refined/releases/latest/download/multised_refined_dataset.tsv.gz"
 size_mb <- round(file.size("multised_refined_dataset.tsv.gz") / 1024^2, 2)
 cat(sprintf(
   '<a class="btn btn-primary" href="%s" download role="button">Download multised_refined_dataset.tsv.gz (%s MB)</a>\n',
