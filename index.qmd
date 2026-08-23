@@ -99,6 +99,9 @@ pressure held back for evaluation:
   into a per-sample verdict (using no aquaculture information), checked against distance
   to the cages, and noting where it cannot be made (the samples around the farms lack the
   aluminium needed, because the programme that collects them does not report it).
+- [Method Revisions](./method-revisions.qmd): what changed in the background and pristine
+  methods, what forced each change, and which figures moved. Read this first if you hold a
+  download taken before v0.9.0.
 - [Enrichment Map](./enrichment-map.qmd): all sites in grey with the potentially pristine
   samples (EF and strict) overlaid, per element and fraction.
 

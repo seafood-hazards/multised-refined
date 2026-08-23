@@ -1,0 +1,211 @@
+---
+title: "Method Revisions"
+subtitle: "What changed in the background and pristine methods, and what it did to the numbers"
+---
+
+```{css, echo=FALSE}
+th { white-space: nowrap; }
+```
+
+The methods behind the background and pristine pages have been revised. Numbers taken from
+this site before the revision **will not reproduce**, and the dataset download changed
+shape, so this page is the reconciliation: what each method was, what it is now, what
+forced the change, and which figures moved.
+
+Everything below is generated from the pipeline. The "before" column is the background
+module's output exactly as published in **v0.8.0**, kept frozen for the purpose; the
+"after" column is the current output. Neither side is typed into this page.
+
+```{r}
+#| label: setup
+library(dplyr)
+library(tidyr)
+library(knitr)
+
+bdir <- "data/refined_summary"
+rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
+                           check.names = FALSE)
+ch    <- rd("refined_method_changes.csv")
+basis <- rd("refined_ef_basis.csv")
+cens  <- rd("refined_censoring.csv")
+vsrc  <- rd("refined_pristine_validation_source.csv")
+
+elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
+```
+
+## 1. Aluminium is measured on two different bases
+
+**Before.** The enrichment factor divided each sample's metal / Al by one reference: the
+offshore median of metal / Al, taken over every data source pooled together.
+
+**Now.** Each fraction's reference is computed within a **single aluminium measurement
+basis**, and samples on the other basis are left unclassified rather than judged against a
+reference they do not belong to.
+
+**What forced it.** The sources do not all measure aluminium the same way. Some report
+near-total aluminium, some report what an acid extraction leaches, which is two to three
+times less. In the same sea area, Mareano's bulk aluminium averages about 15,600 mg/kg
+against MUDAB's 56,000, while their iron differs by less than a factor of two: it is the
+normaliser that differs, not the sediment. Since the bulk reference was 54 to 99% Mareano,
+every non-Mareano sample was divided by a reference far too high, and came out too
+pristine. The same seabed scored 97% adequate for cobalt if ICES-DOME measured it and 41%
+if Mareano did.
+
+No source records its digestion, so the basis is inferred per sample from **Fe/Al**. Both
+elements are lithogenic and track grain size, so their ratio is nearly grain-size free,
+and an acid extraction depresses aluminium far more than iron. Crustal Fe/Al is about 0.5;
+the cut is at 1.0. It splits ICES-DOME, a single source, into two groups whose metal / Al
+differs by 1.7 to 2.5 times, which is what says it is finding a protocol rather than
+geology.
+
+```{r}
+#| label: basis-table
+basis |>
+  mutate(Fraction = factor(cat, levels = c("bulk", "sieved63", "sieved20"))) |>
+  transmute(Fraction, Basis = al_basis,
+            `Used for EF` = ifelse(adopted, "yes", "no"),
+            n, `% of fraction` = pct_of_frac,
+            `offshore rows` = n_offshore, `rows < 1 km from a farm` = n_aq_lt1km) |>
+  arrange(Fraction, desc(`Used for EF`), desc(n)) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Bulk had to take the extraction basis: the total-basis stratum has **no** near-cage samples
+at all. The consequence is that bulk aluminium is acid-leachable, so **bulk EF is
+internally comparable but not comparable with literature EF values**. `unplaced` rows are
+those with no iron reported, which cannot be placed either way.
+
+The restriction costs roughly half the classifiable rows and buys a reference that means
+one thing. After it, Mareano's own reference sits within 2% of the adopted one, where
+before it ran up to 21% away.
+
+## 2. Selenium and molybdenum carry no verdict
+
+**Before.** Both elements had backgrounds, thresholds, enrichment factors and pristine
+verdicts, presented like the other five.
+
+**Now.** Their concentrations are still published. Every **verdict** is withheld.
+
+**What forced it.** Measurements below the limit of quantification are removed during
+cleaning. That is the right rule for contamination screening, where a non-detect carries no
+usable number, and it is the wrong rule for estimating a background, because a background
+**is** the low end of the distribution and non-detects are evidence about exactly that end.
+
+For five of the seven target elements this removes under 2% of measurements and does not
+matter. For selenium and molybdenum it removes the majority:
+
+```{r}
+#| label: censoring-table
+cens |>
+  filter(source == "ALL") |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Element = symbol, `measurements` = n_slim,
+            `below LOQ` = n_censored, `% below LOQ` = pct_censored,
+            `verdicts` = ifelse(withheld, "withheld", "published")) |>
+  arrange(desc(`% below LOQ`)) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+For Mareano, which supplies 94 to 99% of the bulk molybdenum and selenium reference, 86% of
+molybdenum and 70% of selenium were removed. What survived is the detected upper tail, so
+the figure published as a "90th-percentile background" sat at roughly the **98th
+percentile** of the real distribution. Rather than print that with a warning, no verdict is
+issued, which is the same rule applied to the aluminium basis above.
+
+This does **not** affect the near-cage molybdenum and selenium enrichment reported on the
+[Enrichment Factor](./background-ef.qmd) page. Removing low offshore values raises the
+offshore reference, which suppresses near-cage EF, so that signal is conservative and
+stands.
+
+Doing it properly means keeping below-LOQ rows as censored observations and using methods
+that handle them without inventing a value. That is a separate piece of work across the
+whole pipeline.
+
+## 3. The mixture's number of components is chosen, not assumed
+
+**Before.** The distribution mixture was always fitted with two components, so it always
+produced a threshold, whether or not the data held two populations.
+
+**Now.** One, two and three components are each fitted and compared by BIC. Where the
+result does not support a separated pair, the threshold is marked **not usable**: it is
+still reported, because seeing how far off it was is informative, but it is dropped from
+the strict pristine rule instead of being applied as a number that marks nothing.
+
+**What forced it.** Cobalt is the clear case. Its threshold, 6.45 mg/kg, sat almost exactly
+on the background geometric mean of 6.22, with only 31% of samples assigned to
+"background". A background component that is a minority of the data inverts the method's own
+premise. One component never wins on BIC, so these distributions are genuinely not single
+normals, but three components win for copper, manganese, selenium and zinc, and combined
+with the separation test this marks cobalt, copper and zinc thresholds unusable.
+
+The thresholds themselves did not move: the two-component fit kept its own search, so this
+changed which thresholds are **used**, not what they are.
+
+## 4. A second enrichment reference
+
+**Before.** One reference, the offshore median of metal / Al, with EF < 1 read as adequate.
+
+**Now.** The median stays as the headline and the offshore **90th percentile** is reported
+beside it, as `ef_p90ref` in the download.
+
+**What forced it.** EF < 1 against a median denominator fails half the reference population
+by construction. That is where "about half of the samples are adequate" came from: it was
+arithmetic before it was ecology. Against the P90, EF < 1 means "below the offshore 90th
+percentile", which is how the [Global Background](./background.qmd) page and the
+`background_p90` column already define background. The pair also exposes an inconsistency
+the site was carrying, with two different definitions of background on different pages.
+
+## The numbers that moved
+
+Bulk, the verdict measures. `withdrawn` marks a figure no longer published.
+
+```{r}
+#| label: changes-table
+ch |>
+  filter(cat == "bulk", grepl("pristine|classifiable|adequate", measure)) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Measure = measure, Element = symbol, Before = before, After = after,
+            Change = change) |>
+  arrange(Measure, Element) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Two things are worth reading carefully. The **classifiable** share falls everywhere,
+steeply for copper and zinc, because the aluminium-basis restriction withdraws samples
+rather than misjudging them. And cobalt's **strict** share rises sharply, from 20 to 47%,
+because its mixture threshold is now recognised as unusable and dropped from the rule; the
+old 20% was cobalt failing a threshold that marked nothing.
+
+The full comparison, including the references and thresholds themselves, is in
+`refined_method_changes.csv` in the [dataset download](./download-dataset.qmd).
+
+## What the revision did not change
+
+The two findings the site rests on both survive, and one is now better supported.
+
+**Near-cage enrichment survives grain-size control.** Copper, zinc, selenium and molybdenum
+are still clearly enriched approaching the cages after normalising to aluminium.
+
+**The distance gradient is not an artefact of which programme sampled where.** This was an
+open question: the near bands are largely Vannmiljo and the far bands largely Mareano, so a
+gradient pooled across sources could have been a difference between programmes. Restricting
+to one aluminium basis made the bands homogeneous enough to test it within a single source,
+and it holds in both:
+
+```{r}
+#| label: within-source
+vsrc |>
+  mutate(Band = factor(band, levels = c("<1km", "1-5km", "5-20km", ">20km"))) |>
+  transmute(Source = source, Band, `samples` = n,
+            `% pristine (EF rule)` = pct_ef, `% pristine (strict)` = pct_strict) |>
+  arrange(Source, Band) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+::: {.callout-note}
+This page covers the background and pristine methods only. The upstream stages (parsing,
+harmonisation, quality control, cross-source de-duplication) are unchanged, so the
+concentrations themselves have not moved: `value_mgkg` for a given sample is the same
+before and after. What changed is which samples receive a verdict, and what the verdict is
+measured against.
+:::

@@ -14,6 +14,14 @@ Gaussian mixture to the log concentration separates them, and the **crossover** 
 components is a background threshold (the upper bound of the natural population), with no
 external reference, no offshore or aquaculture filter.
 
+The number of components is **not assumed**. Fixing it at two would produce a threshold
+whether or not the data holds two populations, so one, two and three components are each
+fitted and compared by BIC. Where the result does not support a separated pair the threshold
+is marked **not usable**: it is still shown below, because seeing how far off it is tells you
+something, but it is dropped from the strict rule on the
+[Pristine Classification](./background-pristine.qmd) page rather than applied as a number
+that marks nothing.
+
 It is fitted on the **raw** value (mg/kg) per element and fraction. Raw values carry grain
 size, so a muddy-versus-sandy split can imitate a background-versus-enriched one; this is
 the distribution-only view, to be read against the offshore, grain-size-normalised and
@@ -95,7 +103,9 @@ comp |> filter(cat == "bulk") |>
             `mixture threshold` = threshold,
             `offshore P90` = offshore_p90,
             `% background` = pct_bg,
-            `two populations?` = ifelse(separated == TRUE, "yes", "continuum")) |>
+            `two populations?` = ifelse(separated == TRUE, "yes", "continuum"),
+            `best k (BIC)` = k_best,
+            `threshold usable?` = ifelse(usable == TRUE, "yes", "no")) |>
   arrange(Element) |>
   kable(caption = "Bulk background from the mixture, and the offshore P90 for comparison (mg/kg).")
 ```
@@ -106,16 +116,27 @@ sits near its offshore P90 (about 34), and molybdenum's (about 2.4) near its off
 convergence is worth having, with the shared data above in mind. Manganese and zinc come out
 lower on the mixture than offshore.
 
-The **two populations? / continuum** column matters: manganese, molybdenum and selenium
-have a genuinely distinct enriched hump, while copper, zinc and cobalt do not, their
-distributions are closer to a single skewed population, so their threshold is a soft cut,
-not a natural break. A distinct hump is not always contamination either: for manganese it
-may be the muddy-versus-sandy grain-size split showing through in the raw value.
+The last three columns matter most. Manganese, molybdenum and selenium have a genuinely
+distinct enriched hump, while copper, zinc and cobalt do not: their distributions are closer
+to a single skewed population, so their threshold is a soft cut rather than a natural break,
+and it is marked **not usable**. A distinct hump is not always contamination either: for
+manganese it may be the muddy-versus-sandy grain-size split showing through in the raw value.
+
+One component never wins on BIC, so none of these distributions is a single normal. But
+three components win for copper, manganese, selenium and zinc, which says the
+background-versus-enriched dichotomy is itself a simplification of what is there. Cobalt is
+the case that shows why the usability test is needed: its threshold, 6.45 mg/kg, sits almost
+exactly on the background geometric mean of 6.22, with only 31% of samples assigned to
+"background". A background that is a minority of the data inverts the method's own premise.
 
 ::: {.callout-note}
 The mixture is unsupervised and knows nothing about pressure, so its "background"
 population is only the lower mode of the distribution, which is a good proxy for natural
-sediment only when enrichment is limited to a minority of sites. It is fitted on raw
+sediment only when enrichment is limited to a minority of sites. Selenium and molybdenum are
+shown here for the distribution's shape alone: they carry no background verdict anywhere on
+this site, most of their measurements having fallen below the limit of quantification and
+been removed upstream ([Method Revisions](./method-revisions.qmd)), which truncates exactly
+the lower mode this method fits. It is fitted on raw
 values, so grain size can create or hide a second population; the
 [Grain-Size-Normalised](./background-gsnorm.qmd) and [Enrichment Factor](./background-ef.qmd)
 pages are the controls. Read as one line of evidence that agrees with the spatial background

@@ -23,25 +23,25 @@ and > 5 mark rising enrichment **relative to the local offshore background** (so
 not the usual crustal-referenced numbers).
 
 ::: {.callout-important}
-## The bulk reference is not comparable across data sources
+## The reference is restricted to one aluminium basis
 
-The reference is one median over all five sources pooled, and in the **bulk** fraction that
-pool is 54 to 99% Mareano. Mareano's aluminium is measured on a different basis from the
-other sources': about 1.6% Al where ICES-DOME and MUDAB report 5 to 6%, with iron barely
-differing between them, which is the signature of an acid extraction rather than a total
-digestion. Aluminium is the denominator of every number on this page, so the bulk reference
-is roughly 2 to 3 times too high for every non-Mareano sample, and those samples receive an
-EF that is correspondingly **too low, which is to say too pristine**.
+The sources do not all measure aluminium the same way: some report near-total aluminium,
+some report what an acid extraction leaches, which is two to three times less. Aluminium is
+the denominator of every number on this page, so a reference pooled over both meant nothing
+and pushed the under-reported samples toward falsely pristine.
 
-The size of it is in the [source table](#is-the-reference-comparable-across-sources) below.
-Holding the sea area fixed does not shrink the spread, so this is not regional geology. The
-**sieved fractions are unaffected**: Mareano contributes nothing to them and the remaining
-sources agree to within about 15%.
+Each fraction's reference is therefore computed within a **single basis**, inferred per
+sample from Fe/Al, and a sample on the other basis, or with no iron to place it, is left
+**unclassified** rather than judged against a reference it does not belong to. Bulk uses the
+extraction basis; the sieved fractions use the total basis. It costs roughly half the
+classifiable rows.
 
-Until the bulk reference is stratified or restricted, **read the bulk EF classes within a
-source, not across sources**, and treat the pooled bulk shares below as provisional. The
-near-cage gradient further down does not depend on the cross-source reference and is not
-affected.
+Two consequences worth carrying. Bulk aluminium here is acid-leachable, so **bulk EF is
+internally comparable but not comparable with literature EF values**. And the classifiable
+share on the [Pristine Classification](./background-pristine.qmd) page is much lower than it
+was, because samples are now withdrawn rather than misjudged.
+
+[Method Revisions](./method-revisions.qmd) sets out what this changed and by how much.
 :::
 
 The background here uses **no aquaculture information**: it is the offshore distribution
@@ -64,6 +64,7 @@ efd <- rd("refined_ef_dist.csv")
 efp <- rd("refined_ef_pressure.csv")
 efb <- rd("refined_ef_background.csv")
 efs <- rd("refined_ef_source.csv")
+efb2 <- rd("refined_ef_basis.csv")
 
 elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
 bin_levels  <- c("<1km", "1-5km", "5-20km", ">20km")
@@ -104,7 +105,8 @@ efd |>
   left_join(efb |> select(symbol, cat, bg_ratio_al), by = c("symbol", "cat")) |>
   transmute(Element = symbol, Fraction = cat, n,
             `background metal/Al` = bg_ratio_al,
-            `median EF` = ef_p50, `P90 EF` = ef_p90, `% adequate (EF<1)` = pct_lt1) |>
+            `median EF` = ef_p50, `P90 EF` = ef_p90, `% adequate (EF<1)` = pct_lt1,
+            `% adequate (P90 ref)` = pct_lt1_p90ref) |>
   arrange(Element, Fraction) |>
   kable(format.args = list(big.mark = ","))
 ```
@@ -120,30 +122,38 @@ groups only.
 #| label: source-table
 efs |>
   filter(cat == "bulk", reliable == TRUE) |>
-  mutate(symbol = factor(symbol, levels = elem_levels)) |>
-  transmute(Element = symbol, Source = source, n,
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         set = factor(set, levels = c("pooled", "adopted"))) |>
+  transmute(Reference = set, Element = symbol, Source = source, n,
             `% of reference` = bg_share, `rel.` = bg_rel,
-            `% adequate (pooled ref)` = pct_lt1,
+            `% adequate (this ref)` = pct_lt1,
             `% adequate (own ref)` = pct_lt1_own) |>
-  arrange(Element, Source) |>
+  arrange(Reference, Element, Source) |>
   kable(format.args = list(big.mark = ","))
 ```
 
-Read the last two columns against each other. Under the pooled reference the same seabed is
-97% adequate for cobalt if ICES-DOME measured it and 41% if Mareano did; under each source's
-own reference every group lands between 35 and 48%, which is what a median reference has to
-give. **The spread between the sources is the artefact, and the convergence is the
-arithmetic.** So the site's "roughly half is adequate" is an average of two halves that are
-wrong in opposite directions, rather than a measurement of the seabed.
+Read the `pooled` block first: that is how the reference was built before. The same seabed
+is 97% adequate for cobalt if ICES-DOME measured it and 41% if Mareano did, while under each
+source's own reference every group lands between 35 and 48%, which is what a median
+reference has to give. The spread between the sources was the artefact and the convergence
+was the arithmetic.
 
-Molybdenum and selenium have a single row each, and that is the point: their bulk reference
-is 94% and 99% Mareano, so **rel.** is 1.00 by construction and there is no second source to
-compare against. That is not reassurance. It means their bulk reference rests entirely on
-one measurement basis, and the few non-Mareano molybdenum and selenium samples are misjudged
-in the same direction as everything else here.
+In the `adopted` block Mareano's **rel.** sits at 1.00 to 1.02, where it ran to 1.21 before.
+A residual gap remains on ICES-DOME's extraction-basis rows, a few hundred pan-European
+samples against Mareano's Norwegian shelf, so part of that is the regional difference no
+source comparison can rule out.
 
-The same table for the sieved fractions would be flat, with every reliable group between
-0.88 and 1.16 on the **rel.** column, which is why the caveat is a bulk one.
+The strata themselves, and what the restriction set aside:
+
+```{r}
+#| label: basis-table
+efb2 |>
+  mutate(Fraction = factor(cat, levels = c("bulk", "sieved63", "sieved20"))) |>
+  transmute(Fraction, Basis = al_basis, Used = ifelse(adopted, "yes", "no"),
+            n, `% of fraction` = pct_of_frac, `offshore rows` = n_offshore) |>
+  arrange(Fraction, desc(Used), desc(n)) |>
+  kable(format.args = list(big.mark = ","))
+```
 
 ## Does the aquaculture signal survive normalisation?
 
@@ -182,8 +192,12 @@ gradient the raw numbers hid.
 EF depends on its background: here the local offshore median of metal / Al, a defensible
 data-driven choice, but a different reference (a lower percentile, or the far-from-cage
 median) would shift every EF up or down. So "EF < 1 = adequate" is relative to this
-background, not an absolute verdict, and in bulk not even a comparable one between sources.
-Aluminium is measured for only about a third of bulk samples, so EF covers that subset;
-iodine is too sparse for any of this. Read with the three background pages, which set the
-reference EF builds on.
+background, not an absolute verdict. The offshore P90 column beside it reads the same data
+against the other conventional reference, and the gap between the two columns is the honest
+width of the answer. Aluminium is measured for only a minority of bulk samples and only some
+of those sit on the adopted basis, so EF covers that subset; iodine is too sparse for any of
+this, and **selenium and molybdenum carry no verdict at all**, because most of their
+measurements fell below the limit of quantification and were removed upstream (see
+[Method Revisions](./method-revisions.qmd)). Read with the three background pages, which set
+the reference EF builds on.
 :::
