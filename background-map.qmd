@@ -21,8 +21,10 @@ selected element and fraction:
   [Distribution-Mixture](./background-mixture.qmd) background upper bound.
 
 A site can meet more than one, so the colours are drawn as concentric rings (largest first).
-None of these use aquaculture information. Values are averaged per site for the display, so
-this is a visual overview; the per-measurement counts on the analysis pages are the
+None of these use aquaculture information. Values are averaged per site **before** the
+thresholds are applied, so the map is a different classifier from the per-measurement one,
+not just a coarser drawing of it: a site whose measurements straddle a threshold can land
+either side of it once averaged. The per-measurement counts on the analysis pages are the
 authoritative ones.
 
 {{< include _db-setup.qmd >}}

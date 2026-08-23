@@ -16,9 +16,9 @@ controlled), **below the [distribution-mixture threshold](./background-mixture.q
 
 Every one of these criteria is estimated with **no aquaculture information**, so the
 pristine verdict is independent of the pressure it is meant to reveal. The aquaculture
-sites enter only afterwards, as an **evaluation**: the closing section checks that the
-pristine fraction falls as sediments approach the cages, which is the sanity check that the
-estimate behaves as it should.
+sites enter only afterwards, as an **evaluation**: the closing section checks whether the
+pristine fraction falls as sediments approach the cages. That check turns out to be a sanity
+test rather than a validation, for reasons set out there.
 
 Only **grain-size-controlled** verdicts are trusted. A raw-concentration version was tried
 and rejected: sandy near-cage sediment slips under a concentration threshold regardless of
@@ -27,7 +27,17 @@ concentration flag validated **backwards**. Where aluminium (hence EF) is absent
 is therefore left **unclassified** rather than guessed. Two flags are reported:
 
 - **EF rule** (permissive, EFSA-preferred): pristine where EF < 1.
-- **Strict rule** (conservative): pristine only where all three criteria agree.
+- **Strict rule** (conservative): EF < 1 **plus two raw-concentration screens**, the
+  mixture threshold and the offshore P90.
+
+The three criteria are not peers, and the strict rule is not three independent votes. Only
+EF < 1 is grain-size controlled; the other two are screens on the raw concentration, the
+same kind of test this page has just rejected on its own. ANDing them onto EF < 1 cannot
+make a sample falsely pristine, only falsely non-pristine, which is the safe direction for a
+conservative rule. It does mean a **muddy but clean** sample can fail the strict rule on
+grain size alone. Cobalt below is the clearest case, 56% pristine on the EF rule against 20%
+strict: that gap reflects cobalt's unreliable mixture threshold and its raw values, not
+evidence that cobalt is enriched.
 
 ```{r}
 #| label: setup
@@ -81,11 +91,11 @@ summ |>
   labs(x = "% of classifiable samples pristine", y = NULL)
 ```
 
-## The data gap: the aquaculture sites cannot be classified
+## The data gap: aluminium is missing where the farms are
 
 This is the key result, and a limitation for the aquaculture question. Aluminium coverage
-falls away exactly as you approach the cages: the sediments right under aquaculture, the
-ones most in need of a pristine-or-not verdict, almost never carry it.
+collapses toward the cages: the sediments most in need of a pristine-or-not verdict are the
+ones least able to receive one.
 
 ```{r}
 #| label: coverage-fig
@@ -102,21 +112,45 @@ cov |>
   labs(x = "distance to nearest aquaculture farm", y = "% classifiable")
 ```
 
-So while these methods can flag a background for the open-shelf data, they largely cannot
-speak to the near-cage sediment, because the aluminium normaliser was not measured there. A
-concrete recommendation follows: to assess aquaculture sites, aluminium (or another
-grain-size normaliser) should be reported alongside the trace elements.
+That gradient is real, but it is **not a property of near-cage sampling**. Splitting the
+same measurements by data source shows coverage that does not depend on distance at all:
 
-## Validation: pristine falls toward the coast and the cages
+| Distance band | Vannmiljø, % with Al | Mareano, % with Al | Vannmiljø share of band |
+|---------------|---------------------:|-------------------:|------------------------:|
+| < 1 km        | 1.4%                 | 100%               | 99.8%                   |
+| 1-5 km        | 3.7%                 | 99.9%              | 93.4%                   |
+| 5-20 km       | 1.4%                 | 100%               | 92.8%                   |
+| > 20 km       | 3.1%                 | 99.6%              | 8.3%                    |
 
-On the samples that *can* be classified, the flag behaves as it should: the pristine share
-drops as sites approach the coast and the farms, confirming that the grain-size-controlled
-verdict is tracking real pressure (not grain size). Near-cage points rest on few classifiable
-samples, so read the trend, not the wiggle.
+Within Vannmiljø, aluminium is reported for 1 to 4% of measurements at **every** distance,
+including beyond 20 km. Within Mareano it is reported for essentially all of them, including
+under 1 km. What changes across the bands is not sampling practice near cages, it is
+**which programme sampled there**: the < 1 km band is 99.8% Vannmiljø, the > 20 km band is
+85% Mareano.
+
+So the finding is sharper than "near-cage sediment cannot be assessed". It is that
+**Vannmiljø does not report aluminium, and Vannmiljø is the programme that samples around
+the farms.** That makes the recommendation concrete rather than general: aluminium (or
+another grain-size normaliser) reported alongside the trace elements in Norwegian coastal
+monitoring would close most of this gap on its own.
+
+## Validation: what the distance trend can and cannot show
+
+On the samples that *can* be classified, the pristine share drops as sites approach the
+coast and the farms, which is the direction a verdict tracking real pressure should move.
+
+The section above makes this a weak test rather than a confirmation, though. The classifiable
+samples are not the same population across the bands: within 1 km of a farm they are roughly
+350 Vannmiljø and 46 Mareano measurements, while beyond 20 km they are roughly 12,600 Mareano
+and 38 Vannmiljø. The distance axis is very nearly a source axis, so part of any trend along
+it is a difference between monitoring programmes and the sea areas they cover. Read the
+figure as consistency, not as validation: a real test has to be run **within a single
+source**, and has not yet been done. Near-cage points also rest on few classifiable samples,
+so read the trend, not the wiggle.
 
 ```{r}
 #| label: validation-fig
-#| fig-cap: "Percentage pristine among classifiable samples, by distance to aquaculture and to coast (EF rule). Pristine rises with distance from pressure."
+#| fig-cap: "Percentage pristine among classifiable samples, by distance to aquaculture and to coast (EF rule). Pristine rises with distance from pressure, but the classifiable samples in the near and far bands come from different monitoring programmes, so the comparison is confounded with source."
 #| fig-width: 8.5
 #| fig-height: 3.4
 val |>
@@ -137,7 +171,17 @@ per element, not an absolute or a site-level judgement. The strict rule inherits
 distribution-mixture caveat (unreliable where there is no clear two-population split, as for
 cobalt). The honest headline is the coverage gap: the classification is trustworthy where
 aluminium exists, which is most of the open-shelf data but almost none of the near-cage data,
-so the aquaculture sites remain largely unassessable from these measurements alone. This is a
+so the aquaculture sites remain largely unassessable from these measurements alone.
+
+Three further limitations belong on the record. Norwegian farms sit in sheltered,
+organic-rich, periodically anoxic fjords, so part of any near-cage signal for the
+redox-sensitive elements may be fjord geochemistry that happens to be co-located with farms
+rather than farm input; separating the two needs a matched comparison of farmed and unfarmed
+fjords. Distance to the nearest farm is also not the same thing as the pressure a sediment
+experienced, because the aquaculture reference includes closed sites and the sample date is
+not aligned to any operating period. And the [Enrichment Map](./enrichment-map.qmd) applies
+these thresholds to per-site averages, which makes it a **different classifier** from the
+per-measurement one tabulated here, not just a coarser drawing of it. This is a
 synthesis of the [Global Background](./background.qmd),
 [Enrichment Factor](./background-ef.qmd) and
 [Distribution-Mixture](./background-mixture.qmd) pages; iodine is too sparse throughout.
