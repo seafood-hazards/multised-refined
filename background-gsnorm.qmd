@@ -14,7 +14,7 @@ choice of proxy matters, this page does it **three ways** side by side, per elem
 fraction:
 
 - **metal / Al** (aluminium, the textbook lithogenic grain-size normaliser),
-- **metal / Fe** (iron, the secondary carrier),
+- **metal / Fe** (iron, a secondary carrier, shown for comparison only: see the note below),
 - **metal / mud** (the value per unit mud fraction, `value / (fines / 100)`), computed
   only where the sample is at least `r 10`% mud, since dividing a sandy sample by a tiny
   mud fraction is unstable.
@@ -22,6 +22,20 @@ fraction:
 For each we compare the offshore (> 10 km) 90th percentile to the global one, exactly as
 the raw page did, so the **shift toward 1 shows how much of the coastal signal was grain
 size**.
+
+::: {.callout-important}
+## Iron is a reference here, not an enrichment normaliser
+
+Norwegian fish feed contains iron, so sediment iron near a farm is partly the pressure
+being measured rather than an independent measure of grain size. Normalising to Fe would
+divide the signal by something that carries the signal, biasing enrichment toward zero
+exactly where enrichment matters most.
+
+Iron stays on this page as a **comparison**, because whether Al and Fe agree is itself
+informative. It is not carried into any verdict: the
+[Enrichment Factor](./background-ef.qmd) and
+[Pristine Classification](./background-pristine.qmd) pages use aluminium only.
+:::
 
 ```{r}
 #| label: setup
@@ -51,7 +65,7 @@ remains.
 
 ```{r}
 #| label: shift-fig
-#| fig-cap: "Offshore/global P90 shift (bulk) for the raw value and the Al, Fe and mud normalisations. For copper, Al-normalising lifts the shift from 0.40 to 0.87: most of copper's apparent coastal enrichment was grain size. The bases disagree, most starkly for copper (Al 0.87 vs mud 0.15)."
+#| fig-cap: "Offshore/global P90 shift (bulk) for the raw value and the Al, Fe and mud bases. For copper, Al-normalising lifts the shift from 0.40 to 0.87: most of copper's apparent coastal enrichment was grain size. The bases disagree, most starkly for copper (Al 0.87 vs mud 0.15). Fe is shown for comparison only and is not used downstream."
 #| fig-width: 8
 #| fig-height: 4
 raw_b <- graw |> filter(cat == "bulk") |> transmute(symbol, basis = "raw", shift = shift_p90,
@@ -73,10 +87,10 @@ ggplot(d, aes(shift, symbol, colour = basis)) +
 The lesson is twofold. **Aluminium-normalising explains most of copper's coastal signal**
 (the shift rises from 0.40 raw to 0.87), and lifts zinc's part way (0.59 to 0.74): a good
 share of what looked like coastal enrichment in the raw values was simply muddier coastal
-sediment. But **the three normalisers disagree**, sharply for copper (Al 0.87 says little
+sediment. But **the three bases disagree**, sharply for copper (Al 0.87 says little
 real enrichment, mud 0.15 says a lot), because aluminium, iron and the mud percentage are
 not the same measure of grain size and cover different samples. So a normalised background
-is only as good as its normaliser, and no single one is definitive.
+is only as good as its basis, and no single one is definitive.
 
 ## The normalised background values
 
@@ -98,8 +112,9 @@ gsp |>
 
 ::: {.callout-note}
 Normalising helps but does not settle the background: it trades the grain-size assumption
-for a normaliser assumption. Aluminium is the most defensible single choice, but its bulk
-coverage is only about a third of the samples; the mud basis is the most direct grain-size
+for a normaliser assumption. Aluminium is the most defensible single choice, and the only
+one carried into the enrichment pages, but its bulk coverage is only about a third of the
+samples; the mud basis is the most direct grain-size
 measure but excludes sandy samples and is unstable at low mud. Read alongside the raw
 [Global Background](./background.qmd) and the [Pressure-Based Background](./background-pressure.qmd)
 pages, not on its own. Iodine and selenium remain too sparse to normalise reliably.
