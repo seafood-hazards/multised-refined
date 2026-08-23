@@ -68,13 +68,16 @@ Several columns are not measurements but conclusions, carried over from the anal
 so the file can be used without reproducing them.
 
 ::: {.callout-important}
-## The verdict columns changed in v0.9.0
+## The verdict columns changed in v0.9.0 and again in v0.9.5
 
-Verdicts computed before v0.9.0 will not reproduce from this file, and two elements no
-longer carry them at all. The methods, what forced each change and the size of every shift
-are set out on [Method Revisions](./method-revisions.qmd). `ef` and `pristine_ef` keep their
-original definitions, so an earlier download remains a subset of this one rather than
-contradicting it.
+Verdicts computed before v0.9.0 will not reproduce from this file. Since v0.9.5 the
+enrichment and pristine columns exist for **cobalt, copper and zinc in the bulk fraction
+only**: no other element or fraction has a normaliser that predicts it, so no verdict is
+issued. The methods, what forced each change and the size of every shift are set out on
+[Method Revisions](./method-revisions.qmd). `ef` and `pristine_ef` keep their original
+definitions, so an earlier download remains a subset of this one rather than contradicting
+it, and `background_p90` and `background_mixture` use no aluminium and are unchanged for
+every group.
 :::
 
 **Pristine**, from [Pristine Classification](./background-pristine.qmd), is grain-size
@@ -88,6 +91,12 @@ Two further restrictions now apply:
 - **Selenium and molybdenum carry no verdict at all.** Most of their measurements fell
   below the limit of quantification and were removed upstream, so what survives is an upper
   tail rather than a background. Their concentrations are still published.
+- **Nor does any group where aluminium does not predict the element.** An enrichment factor
+  is a grain-size control only if the normaliser carries the metal, and measured by
+  regression it does so for cobalt, copper and zinc in bulk (R-squared 0.46 to 0.58) and
+  nowhere else: manganese in bulk and every sieved fraction sit at 0.10 or below. Those
+  groups keep their concentrations and lose only the verdict. See
+  [Regression Normalisation](./background-regression.qmd).
 
 - `pristine_ef`: the permissive rule, EF < 1, where EF is the element/Al ratio divided by
   the offshore background ratio. This is the rule an EFSA submission would use.
