@@ -1,0 +1,225 @@
+---
+title: "Regression Normalisation"
+subtitle: "Whether the ratio's through-the-origin assumption matters here, tested rather than assumed"
+---
+
+```{css, echo=FALSE}
+th { white-space: nowrap; }
+```
+
+The [enrichment factor](./background-ef.qmd) divides metal by aluminium. That treats the two
+as proportional **through the origin**: a sample with half the aluminium should have half the
+metal. Sediment geochemistry usually shows a non-zero intercept instead, and where it does, a
+ratio over-corrects sandy samples and under-corrects muddy ones. The standard alternative
+fits
+
+$$\text{metal} = a + b \times \text{Al}$$
+
+on a background population and calls a sample enriched when it sits above a band around that
+line.
+
+This page does not replace the ratio. It asks the two questions the EF page cannot answer
+about itself: **is the intercept actually non-zero in this data**, and **does aluminium
+predict the metal at all**. The fit uses exactly the EF reference population (offshore, on
+the fraction's adopted aluminium basis), because fitting on different rows would confound the
+method with its reference.
+
+```{r}
+#| label: setup
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+bdir <- "data/refined_summary"
+rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
+                           check.names = FALSE)
+fits <- rd("refined_regression_fits.csv")
+cmpr <- rd("refined_regression_compare.csv")
+rprs <- rd("refined_regression_pressure.csv")
+bins <- rd("refined_regression_bins.csv")
+meta <- rd("refined_regression_meta.csv")
+
+elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
+cat_levels  <- c("bulk", "sieved63", "sieved20")
+bin_levels  <- c("<1km", "1-5km", "5-20km", ">20km")
+BLUE <- "#4477AA"; RED <- "#EE6677"
+theme_set(theme_minimal(base_size = 12))
+
+fac <- function(df) df |> mutate(symbol = factor(symbol, levels = elem_levels),
+                                 cat = factor(cat, levels = cat_levels))
+fits <- fac(fits); cmpr <- fac(cmpr); rprs <- fac(rprs); bins <- fac(bins)
+blank <- function(x) ifelse(is.na(x), "", as.character(x))
+num <- function(x, d = 4) formatC(signif(x, d), format = "g", big.mark = ",", digits = d)
+pfmt <- function(x) ifelse(x < 1e-4, "< 0.0001", sprintf("%.2g", x))
+r2 <- function(sym, ct) fits$r2[fits$symbol == sym & fits$cat == ct]
+```
+
+## First question: does aluminium predict the metal?
+
+Before arguing about the intercept it is worth checking that the line is worth fitting. The
+R² of metal on aluminium, over the offshore reference:
+
+```{r}
+#| label: r2-fig
+#| fig-cap: "How much of each metal's variation aluminium explains, in the offshore reference population. Above the dashed line aluminium is a working grain-size proxy; below it, dividing by aluminium is closer to dividing by noise. Only cobalt, copper and zinc in bulk clear it."
+#| fig-width: 8
+#| fig-height: 3.8
+fits |>
+  mutate(lab = paste(symbol, cat)) |>
+  ggplot(aes(r2, reorder(lab, r2))) +
+  geom_vline(xintercept = 0.3, linetype = "dashed", colour = "grey60") +
+  geom_col(aes(fill = r2 >= 0.3), width = 0.7) +
+  geom_text(aes(label = sprintf("%.3f", r2)), hjust = -0.15, size = 3) +
+  scale_fill_manual(values = c(`TRUE` = BLUE, `FALSE` = RED), guide = "none") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.18))) +
+  labs(x = expression(R^2~"of metal on aluminium (offshore reference)"), y = NULL)
+```
+
+This is the most consequential result on the page, and it is not about the intercept.
+
+- **In bulk, aluminium works for cobalt (`r sprintf("%.2f", r2("CO","bulk"))`), copper
+  (`r sprintf("%.2f", r2("CU","bulk"))`) and zinc (`r sprintf("%.2f", r2("ZN","bulk"))`)**.
+  For these three it explains about half the variation, which is what a grain-size proxy is
+  supposed to do, and normalising by it is doing real work.
+- **It does not work for manganese (`r sprintf("%.3f", r2("MN","bulk"))`)**, molybdenum
+  (`r sprintf("%.3f", r2("MO","bulk"))`) or selenium (`r sprintf("%.3f", r2("SE","bulk"))`).
+  Aluminium explains almost none of their variation, so metal / Al is close to metal divided
+  by an unrelated number. Manganese and molybdenum are redox-mobile and selenium is
+  organic-associated; none of them rides on clay the way the lithogenic metals do.
+- **It does not work in any sieved fraction**, for any element: every R² is below 0.08 and
+  most are below 0.01. That is the arithmetic behind the note on the
+  [Enrichment Factor](./background-ef.qmd) page: sieving is already a grain-size control, so
+  by the time the sample has been cut to below 63 or 20 um there is little texture variation
+  left for aluminium to track. Zinc sieved20 is the extreme case, with an R² of
+  `r sprintf("%.5f", r2("ZN","sieved20"))` and a slope that is not distinguishable from zero.
+  Copper sieved20 is worse than nothing: its slope is significantly **negative**, so more
+  aluminium goes with less copper.
+
+## Second question: is the intercept non-zero?
+
+```{r}
+#| label: fit-table
+fits |>
+  arrange(symbol, cat) |>
+  transmute(Element = symbol, Fraction = cat, n,
+            `intercept (mg/kg)` = num(intercept),
+            `% of mean` = intercept_pct_of_mean,
+            `p` = pfmt(intercept_p),
+            slope = num(slope, 3), `R²` = num(r2, 3),
+            verdicts = if_else(withheld, "withheld (below LOQ)", "")) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+The reviewer's premise holds in most groups and not in the one that matters most. **Copper in
+bulk has an intercept of `r fits$intercept[fits$symbol=="CU" & fits$cat=="bulk"]` mg/kg,
+`r abs(fits$intercept_pct_of_mean[fits$symbol=="CU" & fits$cat=="bulk"])`% of its mean and not
+distinguishable from zero** (p = `r sprintf("%.2f", fits$intercept_p[fits$symbol=="CU" & fits$cat=="bulk"])`).
+For copper, the element the EF pages lean on hardest, the ratio's assumption is met.
+
+Cobalt (`r fits$intercept_pct_of_mean[fits$symbol=="CO" & fits$cat=="bulk"]`% of the mean) and
+zinc (`r fits$intercept_pct_of_mean[fits$symbol=="ZN" & fits$cat=="bulk"]`%) have intercepts
+that are real and moderate: the ratio over-corrects their low-aluminium samples, which is
+exactly the failure mode described in the literature. In the sieved fractions the intercepts
+run to 86 to 182% of the mean, but that is a symptom of the fit having no slope to speak of
+rather than a meaningful offset: when the line is flat, the intercept is just the mean.
+
+```{r}
+#| label: line-fig
+#| fig-cap: "Metal against aluminium in the offshore reference, in twenty aluminium bins (points are bin medians, bars the 10th to 90th percentiles), with the fitted line. Where the line is steep and the points follow it, aluminium is a working normaliser; manganese shows what it looks like when it is not."
+#| fig-width: 8.5
+#| fig-height: 5
+sel <- c("CO", "CU", "ZN", "MN")
+bd <- bins |> filter(cat == "bulk", symbol %in% sel)
+fl <- fits |> filter(cat == "bulk", symbol %in% sel)
+ggplot(bd, aes(al / 10000, value_p50)) +
+  geom_linerange(aes(ymin = value_p10, ymax = value_p90), colour = "grey75") +
+  geom_point(size = 1.8, colour = BLUE) +
+  geom_abline(data = fl, aes(intercept = intercept, slope = slope * 10000),
+              colour = RED, linewidth = 0.8) +
+  facet_wrap(~ symbol, scales = "free_y") +
+  labs(x = "aluminium, %", y = "concentration, mg/kg")
+```
+
+## Would the verdicts change?
+
+Both methods can be read against either of the two references the site now reports. The
+regression line (residual at or below zero) is the analogue of EF < 1 against the offshore
+**median**; the regression band (residual at or below the offshore P90 of the residuals) is
+the analogue of EF < 1 against the offshore **P90**.
+
+```{r}
+#| label: compare-table
+cmpr |>
+  arrange(symbol, cat) |>
+  transmute(Element = symbol, Fraction = cat, n,
+            `regression line` = blank(pct_reg_line), `EF median` = blank(pct_ef_median),
+            `regression band` = blank(pct_reg_band), `EF P90` = blank(pct_ef_p90),
+            `% agreeing (line vs median)` = blank(pct_agree_median),
+            `regression only` = blank(pct_reg_only), `EF only` = blank(pct_ef_only)) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+**At the P90 level the two methods agree to within a few points everywhere**, which is the
+practically important comparison, because the P90 reference is the one that matches how the
+background pages define background. At the median level the regression is systematically the
+more permissive of the two, by 2 points for copper and 27 for manganese. Manganese is also the
+element whose fit explains nothing, so the extra permissiveness there is not a better verdict,
+it is a flatter line letting more samples under it.
+
+```{r}
+#| label: pressure-fig
+#| fig-cap: "Share of samples judged at or below background by distance to the nearest farm, under the regression line and under EF < 1. Reliable bands only. The two methods trace the same gradient, so switching would not buy a better held-out check."
+#| fig-width: 8.5
+#| fig-height: 3.4
+rprs |>
+  filter(reliable, cat == "bulk", !is.na(pct_reg_line)) |>
+  pivot_longer(c(pct_reg_line, pct_ef_median), names_to = "method", values_to = "pct") |>
+  mutate(aq_bin = factor(aq_bin, levels = bin_levels),
+         method = factor(method, levels = c("pct_ef_median", "pct_reg_line"),
+                         labels = c("EF < 1", "regression line"))) |>
+  ggplot(aes(aq_bin, pct, group = method, colour = method)) +
+  geom_line(linewidth = 0.7) + geom_point(size = 2) +
+  scale_colour_manual(values = c(`EF < 1` = BLUE, `regression line` = RED), name = NULL) +
+  facet_wrap(~ symbol, nrow = 1) +
+  labs(x = "distance to nearest farm", y = "% at or below background")
+```
+
+## What follows from this
+
+**The ratio is not the problem the review expected it to be.** For copper the intercept is
+not distinguishable from zero; for cobalt and zinc it is real but moderate; and at the P90
+reference the two methods produce nearly the same verdicts. Replacing metal / Al with a
+regression would change the published numbers by a few points and would not change any
+conclusion. That is worth knowing, and it is the opposite of what the ratio-normalisation
+literature would have predicted without looking.
+
+**The real finding is about coverage of the method, not its form.** Aluminium normalisation,
+in either form, is only doing grain-size control for cobalt, copper and zinc in bulk. For
+manganese, molybdenum and selenium it explains under a tenth of the variation, and in every
+sieved fraction it explains essentially none. Those EF numbers are still computed and still
+published, and a reader is entitled to know that behind some of them is a division by a
+number that does not track the metal.
+
+That points at a decision this site has not yet taken, stated here rather than acted on: the
+same principle that withholds a verdict where the aluminium basis is wrong, and where most
+measurements fell below the limit of quantification, would withhold it where aluminium does
+not predict the metal at all.
+
+::: {.callout-note}
+This page is diagnostic. **No verdict computed here is carried into the
+[dataset download](./download-dataset.qmd)**, which still ships the EF-based flags described
+on the [Pristine Classification](./background-pristine.qmd) page.
+
+The fit is ordinary least squares on untransformed mg/kg, which is the convention in the
+sediment-normalisation literature and is what makes the intercept interpretable. It assumes
+constant residual variance, which these skewed distributions do not have, so the residual
+band is wider at low concentrations than it should be and the standard errors are optimistic.
+Distributional outliers were already removed upstream. A robust or heteroscedastic fit would
+move the coefficients a little; it would not move an R² of 0.004.
+
+Selenium and molybdenum carry no verdict anywhere on this site, so their columns are blank
+here too, though their fits are shown because the R² is the point. Iodine is too sparse to
+fit. Aluminium covers a minority of samples, so everything on this page describes the
+classifiable subset, not the collection.
+:::

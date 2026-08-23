@@ -304,7 +304,10 @@ undermeasured; what is actually undermeasured is everything one programme touche
 
 The three grain-size normalisers also disagree with each other and cover different samples,
 so the metal/Al column is one choice among three and is aluminium's answer alone; the
-[Grain-Size-Normalised Background](./background-gsnorm.qmd) page sets out the disagreement.
+[Grain-Size-Normalised Background](./background-gsnorm.qmd) page sets out the disagreement, and
+[Regression Normalisation](./background-regression.qmd) shows that aluminium's grip varies by
+element: about half the variation of cobalt, copper and zinc in bulk, under a tenth of
+manganese, molybdenum and selenium, and essentially none in any sieved fraction.
 The [Pressure-Based Background](./background-pressure.qmd) page is Norway-only and is
 deliberately held out of the estimation, so its far band is corroboration here and evidence
 on the [Enrichment Summary](./enrichment-summary.qmd), never an input. Its *near*-cage ratios
