@@ -21,11 +21,19 @@ page:
   threshold and below the offshore P90 (a subset, drawn inside the EF ring). The two extra
   screens are not grain-size controlled, so a muddy but clean site can drop out of this ring
   on grain size alone.
-- **Unclassifiable**: no aluminium, so no EF can be formed (off by default). These cluster
-  near the coast and the cages, which is the key limitation: the sites under most pressure
-  often cannot be classified. The cause is a reporting gap rather than a sampling one, since
-  the Norwegian coastal programme that samples around the farms does not report aluminium at
-  any distance (see [Pristine Classification](./background-pristine.qmd)).
+- **Unclassifiable**: no EF can be formed (off by default). These cluster near the coast and
+  the cages, which is the key limitation: the sites under most pressure often cannot be
+  classified. The cause is a reporting gap rather than a sampling one, since the Norwegian
+  coastal programme that samples around the farms does not report aluminium at any distance
+  (see [Pristine Classification](./background-pristine.qmd)).
+
+Only **cobalt, copper and zinc in bulk** carry an enrichment verdict. Select any other
+element or fraction and every site draws grey, because aluminium does not predict that
+element there and dividing by it would not be a grain-size control
+([Regression Normalisation](./background-regression.qmd)); selenium and molybdenum are
+withheld for a different reason, most of their values having fallen below the limit of
+quantification. Concentrations for every group are on the
+[Background Map](./background-map.qmd).
 
 None of the rules use aquaculture information. Values are averaged per site **before** the
 thresholds are applied, so the map is a different classifier from the per-measurement one,
@@ -62,7 +70,7 @@ fractions = [
 pristine_types = [
   { key: "pristine_ef",     label: "Pristine (EF < 1)",   color: "#228833", radius: 8 },
   { key: "pristine_strict", label: "Pristine (strict)",   color: "#004488", radius: 5 },
-  { key: "unclassifiable",  label: "Unclassifiable (no Al)", color: "#CCBB44", radius: 6 }
+  { key: "unclassifiable",  label: "Unclassifiable", color: "#CCBB44", radius: 6 }
 ]
 ```
 
@@ -76,7 +84,15 @@ mix_comp   = FileAttachment("data/refined_summary/refined_mixture_components.csv
 thresholds = {
   const m = new Map()
   const put = (k, f) => { const o = m.get(k) ?? {}; f(o); m.set(k, o) }
-  for (const r of ef_bg)      put(r.symbol + "|" + r.cat, o => o.efbg = r.bg_ratio_al)
+  // D4: a group whose aluminium does not predict the metal, or whose values were mostly
+  // below the LOQ, carries no enrichment factor, so it gets no threshold here either and
+  // every site in it draws as unclassifiable. Same rule as the tables.
+  for (const r of ef_bg)
+    put(r.symbol + "|" + r.cat, o => {
+      o.no_verdict = (r.withheld === true || r.withheld === "TRUE" ||
+                      r.unnormalisable === true || r.unnormalisable === "TRUE")
+      o.efbg = o.no_verdict ? null : r.bg_ratio_al
+    })
   for (const r of bg_compare) put(r.symbol + "|" + r.cat, o => o.p90 = r.p90_off10)
   for (const r of mix_comp)   put(r.symbol + "|" + r.cat, o => o.mix = r.threshold)
   return m
@@ -215,5 +231,7 @@ counts = ({
 
 map_data.length === 0
   ? md`*No data for this selection.*`
+  : th.efbg == null
+  ? md`**${selected_element.label}** · ${selected_fraction.label} · **${counts.all}** sites · *no enrichment verdict for this group: aluminium does not predict this element in this fraction, or most of its values fell below the limit of quantification. Concentrations are on the [Background Map](./background-map.qmd).*`
   : md`**${selected_element.label}** · ${selected_fraction.label} · **${counts.all}** sites · pristine EF **${counts.ef}** · strict **${counts.strict}** · unclassifiable **${counts.unclass}**`
 ```

@@ -199,6 +199,47 @@ municipalities either way. Restricted to samples contemporary with an operating 
 molybdenum falls from 13.5 times to 8.0 on 28 measurements, and selenium loses its near band
 entirely. What the controls cannot separate is a fjord-wide effect from no effect.
 
+## 7. A verdict needs a normaliser that works
+
+**Before.** Every element and fraction with enough aluminium received an enrichment factor
+and a pristine verdict. Manganese, molybdenum and selenium in bulk had them; so did all three
+fractions of copper and zinc.
+
+**Now.** Verdicts exist for **cobalt, copper and zinc in the bulk fraction** and nowhere
+else. Concentrations, offshore references, distributions and the two non-normalised verdicts
+(`background_p90`, `background_mixture`, which use no aluminium) are published for every group
+exactly as before.
+
+**What forced it.** An enrichment factor divides metal by aluminium and calls the result
+grain-size controlled. That holds only where aluminium carries the metal, and until now the
+site had never checked. Regressed on the offshore reference, aluminium explains about half the
+variation of cobalt, copper and zinc in bulk and **0.10 or less of everything else**, including
+every sieved fraction of every element. Copper sieved20 and molybdenum bulk have rank
+correlations at or below zero: more aluminium goes with less metal, or with nothing.
+
+A group is now classified only where both the R-squared on the offshore reference reaches 0.30
+and Spearman's rho over all on-basis rows reaches 0.50. The two measures agree completely, and
+the limits could be moved anywhere in 0.10 to 0.46 or 0.47 to 0.65 without changing which
+groups qualify ([Regression Normalisation](./background-regression.qmd)).
+
+**What moved.** Manganese, molybdenum and selenium in bulk, and all three sieved fractions of
+every element, go from a verdict to none: about 16,700 of the 28,000 previously classifiable
+measurements. Copper and zinc keep theirs; cobalt keeps its bulk verdict and loses its sieved
+one. The flat dataset now carries verdicts on 11,266 rows.
+
+**One published claim was withdrawn with it.** This site reported that the near-cage enrichment
+of molybdenum and selenium **survives grain-size control**. It does survive aluminium
+normalisation, but only because aluminium is uncorrelated with those two elements, so the
+normalisation changes almost nothing. A signal cannot survive a test that was never applied.
+Their raw near-cage ratios are unaffected and remain on the
+[Pressure-Based Background](./background-pressure.qmd) page; what is withdrawn is the claim
+that they are grain-size controlled.
+
+**And one check got better.** The pristine share across the four distance-to-farm bands is now
+2, 9, 22 and 49%, against 15, 15, 28 and 49% before. Removing the groups whose enrichment
+factor was noise division sharpened the held-out validation instead of blunting it, which is
+what a sound restriction should do.
+
 ## The numbers that moved
 
 Bulk, the verdict measures. `withdrawn` marks a figure no longer published.
@@ -227,12 +268,12 @@ The full comparison, including the references and thresholds themselves, is in
 
 The two findings the site rests on both survive, and one is now better supported.
 
-**Near-cage enrichment survives grain-size control.** Copper, zinc, selenium and molybdenum
-are still clearly enriched approaching the cages after normalising to aluminium. Section 6
-qualifies this rather than overturning it: what does not survive a geographic control is the
-gradient on **raw** concentrations. The aluminium-normalised one is a better-controlled
-comparison, and it is also the one that rests on the small classifiable subset, so it cannot
-be matched within a municipality in turn.
+**Near-cage enrichment survives grain-size control, for copper and zinc.** Both are still
+clearly enriched approaching the cages after normalising to aluminium, and aluminium genuinely
+predicts both. Sections 6 and 7 narrow this rather than overturning it: the gradient on **raw**
+concentrations does not survive a geographic control, and the claim can no longer be made for
+molybdenum and selenium at all, because their normaliser does nothing. What is left is a
+smaller, better-supported version of the same finding.
 
 **The distance gradient is not an artefact of which programme sampled where.** This was an
 open question: the near bands are largely Vannmiljø and the far bands largely Mareano, so a

@@ -87,7 +87,7 @@ This is the most consequential result on the page, and it is not about the inter
   Aluminium explains almost none of their variation, so metal / Al is close to metal divided
   by an unrelated number. Manganese and molybdenum are redox-mobile and selenium is
   organic-associated; none of them rides on clay the way the lithogenic metals do.
-- **It does not work in any sieved fraction**, for any element: every R² is below 0.08 and
+- **It does not work in any sieved fraction**, for any element: every R² is below 0.09 and
   most are below 0.01. That is the arithmetic behind the note on the
   [Enrichment Factor](./background-ef.qmd) page: sieving is already a grain-size control, so
   by the time the sample has been cut to below 63 or 20 um there is little texture variation
@@ -201,10 +201,32 @@ sieved fraction it explains essentially none. Those EF numbers are still compute
 published, and a reader is entitled to know that behind some of them is a division by a
 number that does not track the metal.
 
-That points at a decision this site has not yet taken, stated here rather than acted on: the
-same principle that withholds a verdict where the aluminium basis is wrong, and where most
-measurements fell below the limit of quantification, would withhold it where aluminium does
-not predict the metal at all.
+**That decision has now been taken.** The same principle that withholds a verdict where the
+aluminium basis is wrong, and where most measurements fell below the limit of quantification,
+withholds one where aluminium does not predict the metal. A group is classified only where
+both measures clear their limit:
+
+| Measure | Limit | Computed over |
+|---|---|---|
+| R² of metal on Al | >= 0.30 | the offshore reference, the rows the EF reference itself uses |
+| Spearman's rho | >= 0.50 | every on-basis row |
+
+The second exists to answer the obvious objection to the first. An R² on the offshore
+reference is attenuated by that reference's restricted range, so a low value there might mean
+a narrow reference rather than a failed normaliser. Spearman over the full set uses the whole
+range of aluminium and is rank based, so neither the restricted range nor the skew of these
+distributions can flatten it. Copper sieved63 is the one group where the distinction bites
+(R² 0.003 on the reference against 0.102 on the full range), and its rho of 0.46 still falls
+short.
+
+**The two measures agree completely**: no group passes one and fails the other, and the limits
+could be moved anywhere in 0.10 to 0.46 for R², or 0.47 to 0.65 for rho, without changing which
+groups qualify. The partition is not an artefact of where the line was drawn.
+
+What survives is **cobalt, copper and zinc in bulk**: three groups, about 11,300 measurements.
+Everything else keeps its concentrations, its offshore reference and its distribution, and
+loses only the verdict. The non-normalised verdicts, `background_p90` and
+`background_mixture`, use no aluminium and are untouched for every group.
 
 ::: {.callout-note}
 This page is diagnostic. **No verdict computed here is carried into the
