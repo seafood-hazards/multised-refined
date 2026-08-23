@@ -44,6 +44,21 @@ was, because samples are now withdrawn rather than misjudged.
 [Method Revisions](./method-revisions.qmd) sets out what this changed and by how much.
 :::
 
+::: {.callout-important}
+## And only where aluminium predicts the metal
+
+Dividing by aluminium is a grain-size control only if aluminium carries the metal. Tested by
+regression on the offshore reference, it does for **cobalt, copper and zinc in bulk**
+(R² 0.46 to 0.58) and for nothing else: manganese, molybdenum and selenium in bulk, and every
+sieved fraction of every element, sit at 0.10 or below, two of them at or below zero.
+
+Those groups therefore carry **no enrichment factor and no pristine verdict**. Their
+concentrations, their offshore references and their distributions are still published; what
+is withheld is the verdict, on the same principle that already withholds one where the
+aluminium basis is wrong. [Regression Normalisation](./background-regression.qmd) has the
+measurements behind it.
+:::
+
 The background here uses **no aquaculture information**: it is the offshore distribution
 alone. That keeps the estimate independent of the pressure it is meant to detect. The
 distance-to-aquaculture panels below are therefore an **evaluation**, not an input, testing
@@ -68,21 +83,23 @@ efb2 <- rd("refined_ef_basis.csv")
 
 elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
 bin_levels  <- c("<1km", "1-5km", "5-20km", ">20km")
+blank <- function(x) ifelse(is.na(x), "", as.character(x))
 theme_set(theme_minimal(base_size = 12))
 ```
 
 ## How enriched is the data?
 
-The share of samples in each EF class, bulk (reliable groups). A large green block means
-much of the data sits at or below the local background, a pristine-candidate pool.
+The share of samples in each EF class, for the bulk groups that carry an enrichment factor.
+A large green block means much of the data sits at or below the local background, a
+pristine-candidate pool.
 
 ```{r}
 #| label: class-fig
-#| fig-cap: "EF class shares by element (bulk). About half of cobalt, copper, manganese and zinc is at or below background (EF<1); molybdenum is the most enriched (most 2-5 and >5). These pooled bulk shares average two incompatible aluminium bases, so read them with the note above: the same seabed scores very differently depending on which programme measured it."
+#| fig-cap: "EF class shares for the three groups that carry an enrichment factor. Between 43 and 48% of each sits at or below the local background, and the remainder is mostly in the 1-2 band. The other elements and every sieved fraction are absent because aluminium does not predict them."
 #| fig-width: 8
 #| fig-height: 3.6
 efd |>
-  filter(cat == "bulk", reliable == TRUE) |>
+  filter(cat == "bulk", reliable == TRUE, !is.na(pct_lt1)) |>
   mutate(symbol = factor(symbol, levels = elem_levels)) |>
   select(symbol, `<1` = pct_lt1, `1-2` = pct_1_2, `2-5` = pct_2_5, `>5` = pct_gt5) |>
   pivot_longer(-symbol, names_to = "EF", values_to = "pct") |>
@@ -94,8 +111,8 @@ efd |>
   labs(x = "% of samples", y = NULL, fill = "EF")
 ```
 
-The background reference and the EF summary per element and fraction. The bulk rows carry
-the caveat above; the sieved rows do not.
+The background reference and the EF summary per element and fraction. Groups with no verdict
+keep their row and their n, so it is visible that they exist and why they are blank.
 
 ```{r}
 #| label: summary-table
@@ -105,8 +122,12 @@ efd |>
   left_join(efb |> select(symbol, cat, bg_ratio_al), by = c("symbol", "cat")) |>
   transmute(Element = symbol, Fraction = cat, n,
             `background metal/Al` = bg_ratio_al,
-            `median EF` = ef_p50, `P90 EF` = ef_p90, `% adequate (EF<1)` = pct_lt1,
-            `% adequate (P90 ref)` = pct_lt1_p90ref) |>
+            `median EF` = blank(ef_p50), `P90 EF` = blank(ef_p90),
+            `% adequate (EF<1)` = blank(pct_lt1),
+            `% adequate (P90 ref)` = blank(pct_lt1_p90ref),
+            verdict = case_when(withheld ~ "withheld (below LOQ)",
+                                unnormalisable ~ "withheld (Al does not predict it)",
+                                TRUE ~ "")) |>
   arrange(Element, Fraction) |>
   kable(format.args = list(big.mark = ","))
 ```
@@ -119,7 +140,7 @@ mineralogy rather than texture. That is the most likely reason the sieved metal 
 backgrounds sit so far below the bulk ones for molybdenum (8.2e-5 sieved63 against 4.4e-4
 bulk). Bulk EF is the grain-size-controlled number; sieved EF is closer to a
 mineralogy-controlled one, and the two are not the same quantity even though they share a
-name. Tested directly, aluminium explains under 8% of the metal's variation in every sieved
+name. Tested directly, aluminium explains under 9% of the metal's variation in every sieved
 group and under 0.1% in some, against about half in bulk for cobalt, copper and zinc: see
 [Regression Normalisation](./background-regression.qmd), which also shows that among the bulk
 elements only those three have a normaliser that predicts them at all. Read the manganese,
@@ -177,7 +198,7 @@ it is real. The median EF by distance to the nearest farm (bulk, Norway):
 
 ```{r}
 #| label: pressure-fig
-#| fig-cap: "Median EF by distance to aquaculture (bulk, log scale, dashed line = background). Copper, selenium, molybdenum and zinc stay enriched near the cages after grain-size normalisation; cobalt and manganese do not."
+#| fig-cap: "Median EF by distance to aquaculture (bulk, log scale, dashed line = background), for the three groups whose normaliser predicts the metal. Copper and zinc stay enriched near the cages after grain-size normalisation; cobalt does not. Manganese, molybdenum and selenium are absent: aluminium does not predict them, so an EF gradient for them would not be a grain-size-controlled result."
 #| fig-width: 8.5
 #| fig-height: 4.4
 efp |>
@@ -193,23 +214,29 @@ efp |>
   labs(x = "distance to nearest aquaculture farm", y = "median EF (log)")
 ```
 
-The signal holds here. **Copper** climbs to a median EF above 2 right at the cages (and
-falls to background beyond 20 km), **selenium** and **molybdenum** to about 4-6, **zinc** to
-about 2, all after grain-size normalisation, so these are consistent with genuine near-cage
-enrichments (copper antifouling, selenium feed, molybdenum from the oxygen-poor near-cage
-sediment). **Cobalt and manganese** stay at or below background throughout. Normalising also
-**sharpens the picture**: in the raw values copper was actually *lower* right at the cages
-(those sites are sandier), but per aluminium it is clearly the most enriched there, the
-near-cage gradient the raw numbers hid.
+**Copper** climbs to a median EF of about 2.4 in the 1 to 5 km band and falls to background
+beyond 20 km; **zinc** climbs to about 2. Both are grain-size controlled, because aluminium
+genuinely predicts both, so this is the strongest evidence on the site for a near-cage effect.
+**Cobalt** stays at background throughout. Normalising also **sharpens the picture** for
+copper: in the raw values it was actually *lower* right at the cages (those sites are
+sandier), but per aluminium it is clearly enriched there, a gradient the raw numbers hid.
 
-That said, the same gradient on **raw** values does not survive a geographic control: compare
-near-cage sediment against sediment 5 km away in the same municipality rather than against the
-open shelf, and copper falls from 3.2 times to about 1.1 and zinc from 1.8 to about 0.9. This
-figure is a different and better-controlled comparison, but it rests on the roughly 1% of
-near-cage samples that carry aluminium, which is far too few to match within a municipality.
-So the aluminium-normalised gradient is currently the strongest evidence for a near-cage
-effect **and** the least representative subset of it. See
-[Pressure Controls](./pressure-controls.qmd).
+**Molybdenum and selenium are no longer on this figure, and that is a correction.** The site
+used to report that their near-cage enrichment survived grain-size normalisation. It did, but
+the normalisation was not doing anything: aluminium is uncorrelated with molybdenum
+(Spearman's rho 0.00) and nearly so with selenium (0.15), so dividing by it leaves their
+gradient essentially untouched. A signal cannot survive a test that was never applied. Their
+raw near-cage ratios are real observations and live on the
+[Pressure-Based Background](./background-pressure.qmd) page; what cannot be claimed for them
+is grain-size control. Manganese leaves the figure for the same reason.
+
+Two limits on what remains. The copper and zinc gradient on **raw** values does not survive a
+geographic control: matched within a municipality rather than against the open shelf, copper
+falls from 3.2 times to about 1.1 and zinc from 1.8 to about 0.9. This figure is the better
+controlled comparison, but it rests on the roughly 1% of near-cage samples that carry
+aluminium, far too few to match within a municipality in turn. So the aluminium-normalised
+gradient is at once the strongest evidence for a near-cage effect and the least representative
+subset of the data. See [Pressure Controls](./pressure-controls.qmd).
 
 ::: {.callout-note}
 EF depends on its background: here the local offshore median of metal / Al, a defensible
@@ -221,6 +248,8 @@ width of the answer. Aluminium is measured for only a minority of bulk samples a
 of those sit on the adopted basis, so EF covers that subset; iodine is too sparse for any of
 this, and **selenium and molybdenum carry no verdict at all**, because most of their
 measurements fell below the limit of quantification and were removed upstream (see
-[Method Revisions](./method-revisions.qmd)). Read with the three background pages, which set
-the reference EF builds on.
+[Method Revisions](./method-revisions.qmd)). Nor do manganese or any sieved fraction, because
+aluminium does not predict them. What is left is cobalt, copper and zinc in bulk: three
+groups and about 11,300 measurements, from which every enrichment number on this site now
+comes. Read with the three background pages, which set the reference EF builds on.
 :::

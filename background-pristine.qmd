@@ -24,7 +24,17 @@ Only **grain-size-controlled** verdicts are trusted. A raw-concentration version
 and rejected: sandy near-cage sediment slips under a concentration threshold regardless of
 pressure, and (see below) aluminium is missing exactly where pressure is highest, so a
 concentration flag validated **backwards**. Where aluminium (hence EF) is absent, a sample
-is therefore left **unclassified** rather than guessed. Two flags are reported:
+is therefore left **unclassified** rather than guessed.
+
+That principle now cuts further than it used to. A verdict also requires that aluminium
+**predict** the element, since dividing by a variable uncorrelated with the metal is not a
+grain-size control however it is dressed up. Measured by regression, aluminium predicts
+cobalt, copper and zinc in bulk and nothing else, so those three groups are the only ones
+classified at all ([Regression Normalisation](./background-regression.qmd)). Manganese, and
+every sieved fraction, are now unclassified for the same reason selenium and molybdenum are:
+the reference behind the verdict does not hold up.
+
+Two flags are reported:
 
 - **EF rule** (permissive, EFSA-preferred): pristine where EF < 1.
 - **Strict rule** (conservative): EF < 1 **plus two raw-concentration screens**, the
@@ -66,10 +76,12 @@ Among the samples that can be classified (those with aluminium), the share flagg
 under each rule, bulk. Both rules rest on EF < 1, whose reference is now computed within a
 single aluminium measurement basis (see the [Enrichment Factor](./background-ef.qmd) page).
 That is why the **classifiable** column is low: a sample off its fraction's basis is
-withdrawn rather than misjudged. **Selenium and molybdenum are absent** because their
-verdicts are withheld entirely, most of their measurements having fallen below the limit of
-quantification and been removed upstream ([Method Revisions](./method-revisions.qmd)). The **classifiable** column is the catch: for copper and zinc, only
-about a quarter of samples carry the aluminium needed to judge them at all.
+withdrawn rather than misjudged. Only **cobalt, copper and zinc in bulk** appear at all.
+Selenium and molybdenum are withheld because most of their measurements fell below the limit
+of quantification and were removed upstream; manganese and every sieved fraction are withheld
+because aluminium does not predict them ([Method Revisions](./method-revisions.qmd)). For
+copper and zinc the classifiable column is the further catch: only about one sample in nine
+carries usable aluminium at all.
 
 ```{r}
 #| label: summary-table
@@ -84,7 +96,7 @@ summ |>
 
 ```{r}
 #| label: pristine-fig
-#| fig-cap: "Share of classifiable bulk samples flagged pristine, EF rule versus strict. Molybdenum is least pristine; the strict rule is much lower for cobalt because its mixture threshold is unreliable (no clear two-population split)."
+#| fig-cap: "Share of classifiable bulk samples flagged pristine, EF rule versus strict, for the three groups that carry a verdict. The two rules now differ by at most one point: since the mixture criterion is dropped where the fit does not separate, the raw screens rarely bite."
 #| fig-width: 7.5
 #| fig-height: 3.4
 summ |>
@@ -106,7 +118,7 @@ ones least able to receive one.
 
 ```{r}
 #| label: coverage-fig
-#| fig-cap: "Percentage of samples that are classifiable (carry aluminium) by distance to the nearest farm. Only about 1% of the samples within 1 km of a farm can be judged, against about 79% beyond 20 km."
+#| fig-cap: "Percentage of samples that can be classified, by distance to the nearest farm. Under 1% of the samples within 1 km of a farm can be judged, against 84% beyond 20 km. The figure covers cobalt, copper and zinc in bulk, the only groups that carry a verdict, so it measures the aluminium gap alone."
 #| fig-width: 7.5
 #| fig-height: 2.8
 cov |>
@@ -163,10 +175,16 @@ vsrc |>
   kable(format.args = list(big.mark = ","))
 ```
 
-Mareano rises from 12% pristine under 1 km to 49% beyond 20 km, and Vannmiljø from 16% to
-29% across the three bands it spans. Both rise monotonically, so **the gradient is not an
+Mareano rises from 6% pristine under 1 km to 49% beyond 20 km, and Vannmiljø from 0% to 14%
+across the three bands it spans. Both rise monotonically, so **the gradient is not an
 artefact of which programme sampled where**. Near-cage points still rest on few classifiable
 samples, so read the trend, not the wiggle.
+
+The gradient is **steeper** than it was before the verdicts were restricted to groups whose
+normaliser works: 2, 9, 22 and 49% across the four distance bands, against 15, 15, 28 and 49%
+when manganese and the sieved fractions were included. Removing groups whose EF was
+noise-division sharpened the held-out check rather than blunting it, which is the outcome a
+sound restriction should produce.
 
 ```{r}
 #| label: validation-fig

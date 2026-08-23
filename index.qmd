@@ -102,8 +102,9 @@ pressure held back for evaluation:
   aquaculture-free) background (EF), then testing whether the reported enrichment matches
   the aquaculture pressure gradient.
 - [Regression Normalisation](./background-regression.qmd): whether the ratio's
-  through-the-origin assumption matters here, and whether aluminium predicts each metal at
-  all. It does for cobalt, copper and zinc in bulk, and for almost nothing else.
+  through-the-origin assumption matters here (it does not), and whether aluminium predicts
+  each metal at all. It does for cobalt, copper and zinc in bulk and for nothing else, which
+  is why those are the only groups that now carry an enrichment or pristine verdict.
 - [Pristine Classification](./background-pristine.qmd): combining the background estimates
   into a per-sample verdict (using no aquaculture information), checked against distance
   to the cages, and noting where it cannot be made (the samples around the farms lack the
