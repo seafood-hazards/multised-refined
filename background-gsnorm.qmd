@@ -92,6 +92,12 @@ real enrichment, mud 0.15 says a lot), because aluminium, iron and the mud perce
 not the same measure of grain size and cover different samples. So a normalised background
 is only as good as its basis, and no single one is definitive.
 
+One further caution on the aluminium basis: metal / Al in the **bulk** fraction is not
+comparable between data sources, because the sources do not all measure aluminium on the
+same basis. The bulk numbers on this page pool them, so they average that difference. The
+[Enrichment Factor](./background-ef.qmd) page sets out the size of it. The sieved fractions
+are unaffected.
+
 ## The normalised background values
 
 The 90th-percentile background per element and fraction on each basis (Al and Fe are

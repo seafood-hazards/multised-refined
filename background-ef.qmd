@@ -22,6 +22,28 @@ grain size, so it separates real enrichment from merely muddier sediment.
 and > 5 mark rising enrichment **relative to the local offshore background** (so these are
 not the usual crustal-referenced numbers).
 
+::: {.callout-important}
+## The bulk reference is not comparable across data sources
+
+The reference is one median over all five sources pooled, and in the **bulk** fraction that
+pool is 54 to 99% Mareano. Mareano's aluminium is measured on a different basis from the
+other sources': about 1.6% Al where ICES-DOME and MUDAB report 5 to 6%, with iron barely
+differing between them, which is the signature of an acid extraction rather than a total
+digestion. Aluminium is the denominator of every number on this page, so the bulk reference
+is roughly 2 to 3 times too high for every non-Mareano sample, and those samples receive an
+EF that is correspondingly **too low, which is to say too pristine**.
+
+The size of it is in the [source table](#is-the-reference-comparable-across-sources) below.
+Holding the sea area fixed does not shrink the spread, so this is not regional geology. The
+**sieved fractions are unaffected**: Mareano contributes nothing to them and the remaining
+sources agree to within about 15%.
+
+Until the bulk reference is stratified or restricted, **read the bulk EF classes within a
+source, not across sources**, and treat the pooled bulk shares below as provisional. The
+near-cage gradient further down does not depend on the cross-source reference and is not
+affected.
+:::
+
 The background here uses **no aquaculture information**: it is the offshore distribution
 alone. That keeps the estimate independent of the pressure it is meant to detect. The
 distance-to-aquaculture panels below are therefore an **evaluation**, not an input, testing
@@ -41,6 +63,7 @@ rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
 efd <- rd("refined_ef_dist.csv")
 efp <- rd("refined_ef_pressure.csv")
 efb <- rd("refined_ef_background.csv")
+efs <- rd("refined_ef_source.csv")
 
 elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
 bin_levels  <- c("<1km", "1-5km", "5-20km", ">20km")
@@ -54,7 +77,7 @@ much of the data sits at or below the local background, a pristine-candidate poo
 
 ```{r}
 #| label: class-fig
-#| fig-cap: "EF class shares by element (bulk). About half of cobalt, copper, manganese and zinc is at or below background (EF<1); molybdenum is the most enriched (most 2-5 and >5)."
+#| fig-cap: "EF class shares by element (bulk). About half of cobalt, copper, manganese and zinc is at or below background (EF<1); molybdenum is the most enriched (most 2-5 and >5). These pooled bulk shares average two incompatible aluminium bases, so read them with the note above: the same seabed scores very differently depending on which programme measured it."
 #| fig-width: 8
 #| fig-height: 3.6
 efd |>
@@ -70,7 +93,8 @@ efd |>
   labs(x = "% of samples", y = NULL, fill = "EF")
 ```
 
-The background reference and the EF summary per element and fraction:
+The background reference and the EF summary per element and fraction. The bulk rows carry
+the caveat above; the sieved rows do not.
 
 ```{r}
 #| label: summary-table
@@ -84,6 +108,42 @@ efd |>
   arrange(Element, Fraction) |>
   kable(format.args = list(big.mark = ","))
 ```
+
+## Is the reference comparable across sources?
+
+Per source, bulk: how much of the pooled reference that source supplies, how its own
+offshore metal / Al reference compares with the pooled one (**rel.**, above 1 meaning the
+source runs richer than the pool), and the share it scores adequate under each. Reliable
+groups only.
+
+```{r}
+#| label: source-table
+efs |>
+  filter(cat == "bulk", reliable == TRUE) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Element = symbol, Source = source, n,
+            `% of reference` = bg_share, `rel.` = bg_rel,
+            `% adequate (pooled ref)` = pct_lt1,
+            `% adequate (own ref)` = pct_lt1_own) |>
+  arrange(Element, Source) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Read the last two columns against each other. Under the pooled reference the same seabed is
+97% adequate for cobalt if ICES-DOME measured it and 41% if Mareano did; under each source's
+own reference every group lands between 35 and 48%, which is what a median reference has to
+give. **The spread between the sources is the artefact, and the convergence is the
+arithmetic.** So the site's "roughly half is adequate" is an average of two halves that are
+wrong in opposite directions, rather than a measurement of the seabed.
+
+Molybdenum and selenium have a single row each, and that is the point: their bulk reference
+is 94% and 99% Mareano, so **rel.** is 1.00 by construction and there is no second source to
+compare against. That is not reassurance. It means their bulk reference rests entirely on
+one measurement basis, and the few non-Mareano molybdenum and selenium samples are misjudged
+in the same direction as everything else here.
+
+The same table for the sieved fractions would be flat, with every reliable group between
+0.88 and 1.16 on the **rel.** column, which is why the caveat is a bulk one.
 
 ## Does the aquaculture signal survive normalisation?
 
@@ -122,7 +182,8 @@ gradient the raw numbers hid.
 EF depends on its background: here the local offshore median of metal / Al, a defensible
 data-driven choice, but a different reference (a lower percentile, or the far-from-cage
 median) would shift every EF up or down. So "EF < 1 = adequate" is relative to this
-background, not an absolute verdict. Aluminium is measured for only about a third of bulk
-samples, so EF covers that subset; iodine is too sparse for any of this. Read with the
-three background pages, which set the reference EF builds on.
+background, not an absolute verdict, and in bulk not even a comparable one between sources.
+Aluminium is measured for only about a third of bulk samples, so EF covers that subset;
+iodine is too sparse for any of this. Read with the three background pages, which set the
+reference EF builds on.
 :::
