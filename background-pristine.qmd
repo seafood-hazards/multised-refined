@@ -106,7 +106,7 @@ ones least able to receive one.
 
 ```{r}
 #| label: coverage-fig
-#| fig-cap: "Percentage of samples that are classifiable (carry aluminium) by distance to the nearest farm. Only about 2% of the samples within 1 km of a farm can be judged, against about 90% beyond 20 km."
+#| fig-cap: "Percentage of samples that are classifiable (carry aluminium) by distance to the nearest farm. Only about 1% of the samples within 1 km of a farm can be judged, against about 79% beyond 20 km."
 #| fig-width: 7.5
 #| fig-height: 2.8
 cov |>
