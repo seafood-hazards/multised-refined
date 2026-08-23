@@ -1,0 +1,308 @@
+---
+title: "Background Summary"
+subtitle: "The four background estimates side by side, per element and fraction"
+---
+
+```{css, echo=FALSE}
+th { white-space: nowrap; }
+```
+
+The four Background pages each define a background differently, and none of them is
+privileged. The [global and offshore percentiles](./background.qmd) are spatial, the
+[distribution mixture](./background-mixture.qmd) is distributional, the
+[grain-size-normalised](./background-gsnorm.qmd) values control for texture, and the
+[pressure bands](./background-pressure.qmd) are defined by distance to a known source.
+They rest on different assumptions and partly on different samples, so **where they agree,
+the agreement is the evidence**, and where they disagree the disagreement is the finding.
+
+This page recomputes nothing. Every number below is read from the summary files the four
+analysis pages write, so it cannot say anything they do not.
+
+```{r}
+#| label: setup
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+bdir <- "data/refined_summary"
+rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
+                           check.names = FALSE)
+pct  <- rd("refined_background_percentiles.csv")
+cmp  <- rd("refined_background_compare.csv")
+bmet <- rd("refined_background_meta.csv")
+mix  <- rd("refined_mixture_components.csv")
+gsp  <- rd("refined_gsnorm_percentiles.csv")
+prs  <- rd("refined_pressure_compare.csv")
+sw   <- rd("refined_background_sitewise.csv")
+ps   <- rd("refined_pristine_summary.csv")
+
+elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
+cat_levels  <- c("bulk", "sieved63", "sieved20")
+theme_set(theme_minimal(base_size = 12))
+
+# reliable groups, exactly as the Global Background page defines them
+ok <- pct |> filter(subset == "global", reliable) |> select(symbol, cat)
+
+# the Al-normalised background, reliable groups only
+al <- gsp |>
+  filter(basis == "al", subset == "global", reliable) |>
+  select(symbol, cat, p90_al = p90)
+
+# the Norwegian far-from-farm band, where it has enough measurements
+nor <- prs |>
+  transmute(symbol, cat, p90_nor = `>20km`, n_nor = `n_>20km`) |>
+  mutate(p90_nor = if_else(!is.na(n_nor) & n_nor >= 30, p90_nor, NA_real_)) |>
+  select(symbol, cat, p90_nor)
+
+held <- ps |> distinct(symbol, withheld) |> filter(withheld) |> pull(symbol)
+
+master <- ok |>
+  left_join(cmp |> select(symbol, cat, n = n_global, p90_global, p90_off10, p90_off20),
+            by = c("symbol", "cat")) |>
+  left_join(mix |> select(symbol, cat, threshold, usable), by = c("symbol", "cat")) |>
+  left_join(al, by = c("symbol", "cat")) |>
+  left_join(nor, by = c("symbol", "cat")) |>
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         cat = factor(cat, levels = cat_levels),
+         verdict = case_when(is.na(usable) ~ NA_character_,
+                             usable ~ "two populations",
+                             TRUE ~ "continuum"),
+         withheld = as.character(symbol) %in% held) |>
+  arrange(symbol, cat)
+
+# the spread of the estimates that share units (mg/kg). A threshold from a fit that does
+# not separate is not a background, so it does not enter the spread.
+spread_of <- function(m) apply(m, 1, function(v) {
+  v <- v[!is.na(v) & v > 0]
+  if (length(v) < 2) NA_real_ else round(max(v) / min(v), 2)
+})
+master <- master |>
+  mutate(thr_ok = if_else(usable %in% TRUE, threshold, NA_real_)) |>
+  mutate(spread_all = spread_of(cbind(p90_global, p90_off10, p90_off20, thr_ok, p90_nor)),
+         spread_off = spread_of(cbind(p90_off10, p90_off20, thr_ok, p90_nor)))
+
+sig <- function(x, d = 4) ifelse(is.na(x), "", formatC(signif(x, d), format = "g",
+                                                      big.mark = ",", digits = d))
+blank <- function(x) ifelse(is.na(x), "", as.character(x))
+```
+
+## The master table
+
+One row per element and fraction, reliable groups only (at least `r bmet$min_n`
+measurements, the rule the analysis pages use). The four estimates that share units are in
+mg/kg; the aluminium-normalised background is a dimensionless metal / Al ratio and is not
+comparable with them.
+
+```{r}
+#| label: master-table
+master |>
+  transmute(Element = symbol, Fraction = cat, n,
+            `global P90` = sig(p90_global),
+            `offshore >10 km` = sig(p90_off10),
+            `offshore >20 km` = sig(p90_off20),
+            `mixture threshold` = sig(threshold),
+            `mixture fit` = blank(verdict),
+            `metal/Al P90` = sig(p90_al, 3),
+            `Norway >20 km` = sig(p90_nor)) |>
+  kable(format.args = list(big.mark = ","), align = "llrrrrrlrr")
+```
+
+Empty cells are absences, not zeroes, and there are three reasons for one:
+
+- **metal/Al** is blank where too few samples in the group carry aluminium. Bulk aluminium
+  coverage is about a third of samples overall, and much lower in some programmes.
+- **Norway >20 km** is blank wherever fewer than `r bmet$min_n` Norwegian measurements sit
+  beyond 20 km of a farm, which is most of the sieved fractions. The band is Norway-only by
+  construction.
+- **Iodine** has no row at all (10 bulk and 5 sieved measurements), and neither does
+  selenium sieved20 (one measurement).
+
+Two rows carry numbers that are **not** background values. Molybdenum and selenium have
+most of their measurements below the limit of quantification, removed during cleaning, so
+what remains is the detected upper tail and every percentile of it sits far above the real
+one. Their concentrations are published; **no background verdict is issued for either**,
+here or anywhere on this site. See [Method Revisions](./method-revisions.qmd).
+
+## How well do the estimates agree?
+
+The convergence indicator is the ratio of the largest to the smallest of the available
+mg/kg estimates for a group: the global P90, both offshore P90s, the Norwegian far-band
+P90, and the mixture threshold where the fit actually separates two populations. A ratio
+near 1 means the definitions land in the same place and the background is well constrained.
+The second column drops the global P90, which is not a background wherever the coast lifts
+it, and so isolates how much of the disagreement the global figure alone causes.
+
+```{r}
+#| label: spread-table
+master |>
+  filter(!is.na(spread_all)) |>
+  transmute(Element = symbol, Fraction = cat,
+            `spread, all estimates` = spread_all,
+            `spread, excluding global P90` = spread_off,
+            `background verdict` = if_else(withheld, "withheld (below LOQ)", "")) |>
+  kable(align = "llrrl")
+```
+
+```{r}
+#| label: spread-fig
+#| fig-cap: "Convergence of the mg/kg background estimates per element and fraction: the ratio of the largest to the smallest, with and without the global P90. Points at 1 mean the definitions agree. The gap between the two points is the damage the global P90 does on its own."
+#| fig-width: 8
+#| fig-height: 4.2
+master |>
+  filter(!is.na(spread_all)) |>
+  transmute(lab = paste(symbol, cat), all = spread_all, off = spread_off) |>
+  pivot_longer(c(all, off), names_to = "set", values_to = "spread") |>
+  mutate(set = factor(set, levels = c("all", "off"),
+                      labels = c("all estimates", "excluding global P90"))) |>
+  ggplot(aes(spread, reorder(lab, spread), colour = set)) +
+  geom_vline(xintercept = 1, linetype = "dashed", colour = "grey60") +
+  geom_line(aes(group = lab), colour = "grey80", linewidth = 0.6) +
+  geom_point(size = 2.6, alpha = 0.9) +
+  scale_colour_manual(values = c("all estimates" = "#EE6677",
+                                 "excluding global P90" = "#4477AA"), name = NULL) +
+  labs(x = "max / min of the available mg/kg estimates", y = NULL)
+```
+
+The result is cleaner than expected. **In bulk, once the global P90 is set aside, every
+element but manganese agrees within about 1.5 times**: cobalt to 1.01, selenium to 1.35,
+copper to 1.48, zinc to 1.50, molybdenum to 1.51. Three definitions built on different
+assumptions, one of them distributional rather than spatial and one of them Norwegian, put
+the background in the same place. That is the strongest thing this page has to say.
+
+Where the indicator is large, it is large for three distinct reasons.
+
+**The global P90 is the outlier, not the background.** Molybdenum in bulk spans 7.19 times
+across all estimates and 1.51 without the global figure: its global P90 of 17.6 mg/kg sits
+against 2.4 to 3.7 everywhere else, because coastal anoxic basins in restricted fjords
+enrich molybdenum for redox reasons. Copper (3.74 to 1.48) and zinc (2.53 to 1.50) are the
+same story in milder form, and are the elements the
+[10 km cutoff sensitivity](./background.qmd#how-much-does-the-10-km-cutoff-matter) already
+flagged: copper's P90 falls 34 to 23 mg/kg between the 10 and 20 km cutoffs, zinc's 130 to
+87. For these three the global P90 is a percentile of the coast, and should not be used as
+a background value.
+
+**The mixture threshold sits far below the spatial estimates for manganese.** Manganese in
+bulk spans 2.45 times and dropping the global P90 does not help at all, because the two
+extremes are its mixture threshold (493 mg/kg) and the Norwegian far band (1,210). Both are
+defensible and they mean different things: the mixture finds the lower mode of a
+distribution, the far band is a place with no farm nearby. For a redox-mobile element that
+precipitates offshore, those need not coincide, and here they do not.
+
+**The estimates genuinely disagree in the sieved20 fraction.** Manganese sieved20 spans
+4.45 times and zinc sieved20 3.39, again with the mixture threshold at one end. The offshore
+filter does almost nothing for the sieved fractions (their offshore/global ratios are near or
+above 1), so nothing pulls the spatial estimates together either, and no single number should
+be quoted for them.
+
+### Sensitivity to sample weighting
+
+The percentiles above count every measurement once, and revisited sites are counted many
+times. Weighting one value per site instead moves the offshore bulk P90 down for all four elements
+that carry a background verdict:
+
+```{r}
+#| label: sitewise-table
+sw |>
+  filter(subset == "offshore>10km", reliable, cat == "bulk",
+         !symbol %in% held) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  arrange(symbol) |>
+  transmute(Element = symbol, sites = n_sites,
+            `P90 per measurement` = sig(p90_meas),
+            `P90 per site` = sig(p90_site),
+            ratio = p90_ratio) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Cobalt and zinc barely move, copper falls about 15% and manganese about 32%. The headline
+figures stay per measurement, but for manganese the two weightings differ enough that the
+range, not either number, is the answer. The [Global Background](./background.qmd#does-repeat-sampling-tilt-the-percentiles)
+page shows why: revisited sites are the pressured ones.
+
+## What to use, element by element
+
+**Cobalt.** Use the offshore P90, about `r sig(master$p90_off20[master$symbol=="CO" & master$cat=="bulk"])`
+mg/kg in bulk. It is the best-constrained element on the page: the 10 km, 20 km and Norwegian
+far-band figures sit within 1% of one another, the global P90 is only 14% above them, and the
+coast barely lifts it (offshore/global ratio 0.88). The mixture fit does not separate two populations for cobalt,
+so its threshold of 6.45 mg/kg is not a background and is not used downstream.
+
+**Copper.** Use the **>20 km** offshore P90, about
+`r sig(master$p90_off20[master$symbol=="CU" & master$cat=="bulk"])` mg/kg in bulk,
+corroborated by the Norwegian far band at `r sig(master$p90_nor[master$symbol=="CU" & master$cat=="bulk"])`
+and the mixture crossover at `r sig(master$threshold[master$symbol=="CU" & master$cat=="bulk"])`.
+Do not use the global P90 of `r sig(master$p90_global[master$symbol=="CU" & master$cat=="bulk"])`,
+and do not use the 10 km figure either: ten kilometres is not far enough out for copper.
+Note also that most of copper's apparent coastal enrichment is
+[grain size](./background-gsnorm.qmd), not pressure: Al-normalising lifts its offshore/global
+shift from 0.40 to 0.87.
+
+**Manganese.** No single value. The offshore filter does not clean manganese, it raises it
+(the >20 km P90 of `r sig(master$p90_off20[master$symbol=="MN" & master$cat=="bulk"])` mg/kg
+exceeds the global `r sig(master$p90_global[master$symbol=="MN" & master$cat=="bulk"])`), and
+the Norwegian far band is higher still. Manganese is redox-mobile and precipitates in
+oxygenated offshore sediment, so a higher offshore value is the natural one, not a
+contaminated one. The mixture threshold of
+`r sig(master$threshold[master$symbol=="MN" & master$cat=="bulk"])` mg/kg is the one estimate
+that separates cleanly, and it is roughly half the spatial figures. Quote a range of about
+500 to 1,200 mg/kg in bulk and say which definition you used.
+
+**Molybdenum.** **No background value is issued.** 52% of molybdenum measurements were
+below the limit of quantification and were removed before these percentiles were computed,
+86% of them in Mareano, which supplies almost all of the far-from-coast reference. What
+survives is the detected tail. Had a value been issued it would have been the >20 km figure
+of about `r sig(master$p90_off20[master$symbol=="MO" & master$cat=="bulk"])` mg/kg, with the
+global P90 of `r sig(master$p90_global[master$symbol=="MO" & master$cat=="bulk"])` discarded
+as a percentile of coastal anoxic basins. Molybdenum's near-cage enrichment is a separate
+question and it survives: see the [Enrichment Summary](./enrichment-summary.qmd).
+
+**Selenium.** **No background value is issued**, for the same reason and more of it: 69% of
+selenium measurements were below the limit of quantification. The bulk estimates are tightly
+clustered (a spread of 1.35), but that agreement is between four statistics of the same
+truncated distribution and is not evidence.
+
+**Zinc.** Use the **>20 km** offshore P90, about
+`r sig(master$p90_off20[master$symbol=="ZN" & master$cat=="bulk"])` mg/kg in bulk,
+corroborated by the Norwegian far band at `r sig(master$p90_nor[master$symbol=="ZN" & master$cat=="bulk"])`
+and the mixture crossover at `r sig(master$threshold[master$symbol=="ZN" & master$cat=="bulk"])`.
+The global P90 of `r sig(master$p90_global[master$symbol=="ZN" & master$cat=="bulk"])` is a
+coastal figure. As with copper, part of the coastal signal is grain size, though less of it
+(the Al-normalised shift rises from 0.59 to 0.74).
+
+**Iodine.** Too sparse for any of this: 10 bulk and 5 sieved measurements in the whole
+database, against a minimum of `r bmet$min_n`. No estimate of any kind is offered.
+
+::: {.callout-note}
+Three cautions apply to every number above.
+
+**"Offshore" is a proxy for pristine, and a coarse one.** A site a few kilometres out in a
+pressured fjord is not clean, and a coastal site in a remote area may be. The Norwegian
+distance-to-farm band is the only estimate here defined by an actual pressure, and it covers
+one country.
+
+**The 90th percentile is a conservative upper bound, not a typical value.** It is the EFSA
+style convention these pages follow, and for the skewed elements it is several times the
+median. A background used for screening and a background used for describing normal
+sediment are not the same statistic.
+
+**These are percentiles of the samples we hold, not of the seabed.** All five sources are
+monitoring programmes whose sampling is driven by regulation and interest, so harbours,
+fjords and impact studies are heavily over-represented and open shelf is not. The
+site-weighting table above corrects for revisited sites being counted many times; nothing
+corrects for the places nobody sampled. Adding a source will move these percentiles.
+
+Where aluminium is missing is a property of the reporting programme, not of the place. The
+metal/Al column covers whichever samples carry aluminium, and coverage varies from near
+complete in Mareano to 1 to 4% in Vannmiljø at every distance from the coast. A reader who
+takes a coverage gradient at face value will conclude that near-cage sediment is
+undermeasured; what is actually undermeasured is everything one programme touches. The
+[Enrichment Summary](./enrichment-summary.qmd) sets this out in full.
+
+The three grain-size normalisers also disagree with each other and cover different samples,
+so the metal/Al column is one choice among three and is aluminium's answer alone; the
+[Grain-Size-Normalised Background](./background-gsnorm.qmd) page sets out the disagreement.
+The [Pressure-Based Background](./background-pressure.qmd) page is Norway-only and is
+deliberately held out of the estimation, so its far band is corroboration here and evidence
+on the [Enrichment Summary](./enrichment-summary.qmd), never an input.
+:::

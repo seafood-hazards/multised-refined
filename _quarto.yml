@@ -34,6 +34,8 @@ website:
             href: background-pressure.qmd
           - text: "Background Map"
             href: background-map.qmd
+          - text: "Background Summary"
+            href: background-summary.qmd
       - text: "Enrichment"
         menu:
           - text: "Enrichment Factor"
@@ -42,6 +44,8 @@ website:
             href: background-pristine.qmd
           - text: "Enrichment Map"
             href: enrichment-map.qmd
+          - text: "Enrichment Summary"
+            href: enrichment-summary.qmd
       - text: "Method Revisions"
         href: method-revisions.qmd
       - text: "EFSA Submission"
