@@ -74,7 +74,9 @@ controlled and therefore needs aluminium. Where aluminium is missing the sample 
 - `pristine_ef`: the permissive rule, EF < 1, where EF is the element/Al ratio divided by
   the offshore background ratio. This is the rule an EFSA submission would use.
 - `pristine_strict`: the conservative rule. EF < 1 **and** below the mixture threshold
-  **and** below the offshore P90, so all three background criteria agree.
+  **and** below the offshore P90. The two extra criteria are raw-concentration screens
+  rather than peers of EF < 1, so a muddy but clean sample can fail this rule on grain size
+  alone; see [Pristine Classification](./background-pristine.qmd).
 
 **Background** is the weaker question of whether the concentration alone sits in the
 background population. Both are raw-concentration rules, so unlike the pristine columns
