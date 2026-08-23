@@ -88,6 +88,9 @@ baseline per element and fraction:
   aquaculture, and the near-cage enrichment (Norway), used to evaluate the enrichment.
 - [Background Map](./background-map.qmd): all sites in grey with the offshore, below-P90
   and below-mixture background samples overlaid, per element and fraction.
+- [Background Summary](./background-summary.qmd): the four estimates side by side per
+  element and fraction, how far apart they are, and which value to use for each element.
+  **Start here if you want a number.**
 
 **Enrichment**, turning the background into a per-sample verdict, with the aquaculture
 pressure held back for evaluation:
@@ -104,6 +107,9 @@ pressure held back for evaluation:
   download taken before v0.9.0.
 - [Enrichment Map](./enrichment-map.qmd): all sites in grey with the potentially pristine
   samples (EF and strict) overlaid, per element and fraction.
+- [Enrichment Summary](./enrichment-summary.qmd): how enriched the collection is under both
+  EF references, how much of it can be judged at all, and whether the verdicts survive the
+  held-out aquaculture check. **Start here if you want the conclusion.**
 
 A multi-element pollution index may be added later.
 

@@ -1,0 +1,257 @@
+---
+title: "Enrichment Summary"
+subtitle: "How enriched the collection is, how much of it can be judged, and whether the verdict holds"
+---
+
+```{css, echo=FALSE}
+th { white-space: nowrap; }
+```
+
+The two Enrichment pages produce verdicts that use **no aquaculture information at all**:
+the [enrichment factor](./background-ef.qmd) is metal per aluminium against an offshore
+reference, and the [pristine classification](./background-pristine.qmd) combines it with
+distributional and spatial screens. The aquaculture gradient is deliberately held out of
+all of it, which is what allows the
+[Pressure-Based Background](./background-pressure.qmd) to serve as an independent yardstick:
+if these verdicts track a pressure they never saw, they are measuring something.
+
+This page recomputes nothing. Every number is read from the files the analysis pages write.
+
+```{r}
+#| label: setup
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+bdir <- "data/refined_summary"
+rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
+                           check.names = FALSE)
+ps   <- rd("refined_pristine_summary.csv")
+pm   <- rd("refined_pristine_meta.csv")
+ed   <- rd("refined_ef_dist.csv")
+em   <- rd("refined_ef_meta.csv")
+efp  <- rd("refined_ef_pressure.csv")
+prs  <- rd("refined_pressure_compare.csv")
+cov  <- rd("refined_pristine_coverage.csv")
+val  <- rd("refined_pristine_validation.csv")
+vsrc <- rd("refined_pristine_validation_source.csv")
+
+elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
+cat_levels  <- c("bulk", "sieved63", "sieved20")
+bin_levels  <- c("<1km", "1-5km", "5-20km", ">20km")
+BLUE <- "#4477AA"; RED <- "#EE6677"
+theme_set(theme_minimal(base_size = 12))
+
+# the held-out check: does the median EF rise toward the cages? Compare the nearest band
+# with enough measurements against the far band, on the same element and fraction.
+grad <- efp |>
+  mutate(band = factor(aq_bin, levels = bin_levels)) |>
+  filter(n >= pm$min_n) |>
+  group_by(symbol, cat) |>
+  summarise(near_band = as.character(band[which.min(as.integer(band))]),
+            near_ef   = ef_p50[which.min(as.integer(band))],
+            far_ef    = ef_p50[band == ">20km"][1], .groups = "drop") |>
+  filter(near_band != ">20km", !is.na(far_ef), far_ef > 0) |>
+  mutate(ef_ratio = round(near_ef / far_ef, 2),
+         evaluation = if_else(ef_ratio >= 1.5, "confirmed", "no signal"))
+
+near <- prs |> select(symbol, cat, enrich_near)
+
+tbl <- ps |>
+  filter(reliable | (withheld & n >= pm$min_n)) |>
+  left_join(ed |> select(symbol, cat, ef_p50, ef_p90, pct_lt1_p90ref, ef_p50_p90ref),
+            by = c("symbol", "cat")) |>
+  left_join(near, by = c("symbol", "cat")) |>
+  left_join(grad |> select(symbol, cat, near_band, ef_ratio, evaluation),
+            by = c("symbol", "cat")) |>
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         cat = factor(cat, levels = cat_levels)) |>
+  arrange(symbol, cat)
+
+bulk <- tbl |> filter(cat == "bulk")
+covq <- cov |> filter(axis == "distance to aquaculture")
+blank <- function(x) ifelse(is.na(x), "", as.character(x))
+cq <- function(b) covq$pct_classifiable[covq$band == b]
+```
+
+## The verdict
+
+EF < 1 is read as `r em$ef_lt1`, and there are two defensible references for it. The
+headline reference is the **offshore median** of metal / Al, the EFSA-style local reference
+the pages cite. The second is the **offshore P90** of the same ratio, which makes EF < 1
+mean "at or below the offshore 90th percentile", exactly what the background pages call
+background. Half the reference population fails the first by construction. Both are
+reported here, and **the spread between them is the answer**, not either column alone.
+
+```{r}
+#| label: verdict-table
+tbl |>
+  transmute(Element = symbol, Fraction = cat, samples = n,
+            `% classifiable` = pct_classifiable,
+            `% at background (median ref)` = blank(pct_ef),
+            `% at background (P90 ref)` = blank(pct_lt1_p90ref),
+            `% pristine (strict)` = blank(pct_strict),
+            verdict = if_else(withheld, "withheld (below LOQ)", "")) |>
+  kable(format.args = list(big.mark = ","), align = "llrrrrrl")
+```
+
+The spread is wide and it is systematic. In bulk, the share of classifiable samples sitting
+at or below background is
+`r min(bulk$pct_ef, na.rm = TRUE)` to `r max(bulk$pct_ef, na.rm = TRUE)`% against the median
+reference and `r min(bulk$pct_lt1_p90ref, na.rm = TRUE)` to
+`r max(bulk$pct_lt1_p90ref, na.rm = TRUE)`% against the P90 reference. The reviewer's
+objection that produced this column was right: **"about half is adequate" was largely
+arithmetic**, because the median of a distribution has half its own population below it. The
+honest statement is that between roughly two fifths and nine tenths of the classifiable
+sediment is at or below the local offshore background, depending on which point of the
+offshore distribution you call background.
+
+```{r}
+#| label: ef-table
+bulk |>
+  filter(!withheld) |>
+  transmute(Element = symbol,
+            `median EF (median ref)` = ef_p50,
+            `median EF (P90 ref)` = ef_p50_p90ref,
+            `P90 EF` = ef_p90,
+            `near/far P90 ratio` = enrich_near,
+            `nearest band` = near_band,
+            `EF near/far` = ef_ratio,
+            evaluation = evaluation) |>
+  kable(align = "lrrrrlrl")
+```
+
+The median EF against the median reference sits within a few percent of 1 for every element,
+which is what a well-behaved local reference looks like. The last three columns are the
+held-out check: the near-band median EF over the far-band one, with `confirmed` where the
+ratio reaches 1.5. Copper (`r bulk$ef_ratio[bulk$symbol == "CU"]` times) and zinc
+(`r bulk$ef_ratio[bulk$symbol == "ZN"]` times) rise toward the cages after grain-size
+control; cobalt and manganese do not, and manganese falls, which is the diagenetic behaviour
+the background pages describe rather than an absence of pressure.
+
+**Molybdenum and selenium are the two elements the check confirms most strongly and the two
+that carry no verdict.** Their near/far EF ratios are `r grad$ef_ratio[grad$symbol == "MO" & grad$cat == "bulk"]`
+and `r grad$ef_ratio[grad$symbol == "SE" & grad$cat == "bulk"]` times, and their raw near/far P90 ratios are
+`r round(near$enrich_near[near$symbol == "MO" & near$cat == "bulk"], 1)` and
+`r round(near$enrich_near[near$symbol == "SE" & near$cat == "bulk"], 1)` times, the largest
+on the page. But most of their measurements fell below the limit of quantification and were
+removed upstream, so their **background** is the detected tail rather than the real low end
+and no pristine verdict can rest on it. The enrichment survives that: dropping low values
+raises the reference, which pushes the near-cage EF **down**, so this gradient is understated
+rather than manufactured. See [Method Revisions](./method-revisions.qmd).
+
+## How much can be judged at all
+
+```{r}
+#| label: coverage-fig
+#| fig-cap: "Percentage of samples that carry aluminium, and can therefore receive any enrichment verdict, by distance to the nearest farm. This is the single most decision-relevant number in the Enrichment section."
+#| fig-width: 7.5
+#| fig-height: 2.8
+covq |>
+  mutate(band = factor(band, levels = bin_levels)) |>
+  ggplot(aes(band, pct_classifiable)) +
+  geom_col(fill = "#AA3377", width = 0.65) +
+  geom_text(aes(label = paste0(pct_classifiable, "%")), vjust = -0.4, size = 3.2) +
+  scale_y_continuous(limits = c(0, 100), expand = expansion(mult = c(0, 0.1))) +
+  labs(x = "distance to nearest aquaculture farm", y = "% classifiable")
+```
+
+**`r cq("<1km")`% of the samples within 1 km of a farm can be judged, against
+`r cq(">20km")`% beyond 20 km.** The sediment most in need of a verdict is the sediment
+least able to receive one, and no amount of method improvement closes that gap, because the
+measurement it needs was never made.
+
+The cause is not near-cage sampling practice. Splitting the same measurements by data source
+shows aluminium coverage that does not depend on distance at all: within Vannmiljø it is 1
+to 4% at **every** band including beyond 20 km, and within Mareano it is essentially
+complete at every band including under 1 km. What changes across the bands is which
+programme sampled there. So the finding is sharper than "near-cage sediment cannot be
+assessed": **Vannmiljø does not report aluminium, and Vannmiljø is the programme that samples
+around the farms.** The recommendation follows directly, and it is cheap: report aluminium
+(or another grain-size normaliser) alongside the trace elements in Norwegian coastal
+monitoring, and most of this gap closes on its own.
+
+### What the classification can and cannot say
+
+**Open-shelf data: trustworthy.** Beyond 20 km of a farm, `r cq(">20km")`% of samples are
+classifiable, the verdicts are grain-size-controlled, and they are validated against a
+pressure gradient they never saw. The validation also holds **within a single source**, so it
+is not a difference between monitoring programmes wearing a distance label:
+
+```{r}
+#| label: validation-table
+vsrc |>
+  mutate(Band = factor(band, levels = bin_levels)) |>
+  transmute(Source = source, Band, samples = n,
+            `% pristine (EF rule)` = pct_ef, `% pristine (strict)` = pct_strict) |>
+  arrange(Source, Band) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+**Near-cage data: largely unassessable.** With `r cq("<1km")`% coverage inside 1 km, any
+statement about the sediment under Norwegian fish farms rests on a handful of samples from
+the rare programmes that measured aluminium there. The pristine shares that *are* computed
+near the cages (15% inside 1 km against 49% beyond 20 km) point the right way and are
+consistent within each source, but they are a thin base and should be read as a direction,
+not a rate.
+
+## Which flag to use
+
+The two flags differ far less than they once did. The **EF rule** is `r pm$rule_ef`. The
+**strict rule** is `r pm$rule_strict`, except that the mixture criterion is now dropped for
+any group whose distribution does not support two populations rather than applied anyway.
+That change removed almost all of the gap between them: in the table above the two shares are
+identical for most groups and differ by at most a few points.
+
+- Use the **EF rule** for EFSA-style reporting. It is a single grain-size-controlled
+  criterion, it is the one the dataset download carries as `pristine_ef`, and it is the only
+  one of the two whose logic is uniform across elements.
+- Use the **strict rule** where a conservative subset is wanted, and read it for what it is:
+  EF plus two raw-concentration screens, not three peer criteria. Both extra criteria are
+  statistics of the concentration distribution, so a muddy but clean sample can fail them for
+  reasons of texture that the EF criterion exists to control for. Where the two rules agree,
+  which is nearly everywhere, that distinction does not bite.
+- Do not treat the two extra criteria as independent confirmation. The mixture threshold and
+  the offshore P90 are computed from largely the same measurements, so partial agreement
+  between them is built in. They are corroboration, which is worth having, and not a second
+  opinion.
+
+::: {.callout-note}
+**EF is relative, and relative to a choice.** The reference is the local offshore
+distribution of metal / Al, not a crustal abundance, which is deliberate (EFSA guidance
+prefers a data-driven local reference) and means these EF values and the 1-2, 2-5, >5 classes
+are **not comparable with literature EF values** referenced to Turekian or Wedepohl. The two
+reference columns above are the width of the answer within this dataset alone.
+
+**The classifiable subset is not a random sample.** Aluminium is reported for a minority of
+bulk samples, and which minority is a property of the reporting programme rather than of the
+seabed, as the coverage section sets out. Every percentage on this page is conditional on
+that subset.
+
+**Bulk EF also spans two aluminium chemistries.** Sources report either near-total or
+acid-extractable aluminium, differing by two to three times, so the reference is restricted
+to one basis per fraction and samples on the other basis are left unclassified rather than
+compared against the wrong denominator. This is why the classifiable shares for copper and
+zinc in bulk are as low as `r min(bulk$pct_classifiable[bulk$symbol %in% c("CU","ZN")])`%.
+[Method Revisions](./method-revisions.qmd) has the before and after.
+
+**The yardstick is itself confounded.** Norwegian farms sit in sheltered, organic-rich,
+periodically anoxic fjords, so part of the near-cage signal for the redox-sensitive elements
+may be fjord geochemistry co-located with farms rather than farm input; separating them needs
+a matched comparison of farmed and unfarmed fjords. Distance to the nearest farm is also not
+the pressure a sediment experienced: the aquaculture reference includes closed sites and the
+sample date is not aligned to any operating period.
+
+**Two further limits carried from the analysis pages.** The
+[Enrichment Map](./enrichment-map.qmd) applies these thresholds to per-site averages, which
+makes it a different classifier from the per-measurement one tabulated here. And ratio
+normalisation assumes metal and aluminium are proportional through the origin; a
+regression-based normalisation is the stronger standard and is not yet implemented here.
+
+Sources: [Enrichment Factor](./background-ef.qmd),
+[Pristine Classification](./background-pristine.qmd),
+[Enrichment Map](./enrichment-map.qmd), and
+[Pressure-Based Background](./background-pressure.qmd) as the held-out evaluation. The
+concentration side is summarised on the [Background Summary](./background-summary.qmd).
+:::
