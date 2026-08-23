@@ -255,7 +255,10 @@ survives is the detected tail. Had a value been issued it would have been the >2
 of about `r sig(master$p90_off20[master$symbol=="MO" & master$cat=="bulk"])` mg/kg, with the
 global P90 of `r sig(master$p90_global[master$symbol=="MO" & master$cat=="bulk"])` discarded
 as a percentile of coastal anoxic basins. Molybdenum's near-cage enrichment is a separate
-question and it survives: see the [Enrichment Summary](./enrichment-summary.qmd).
+question and it survives, reduced: 13.5 times against the open shelf, 8.0 times once only
+samples contemporary with an operating farm are counted, on 28 measurements. See
+[Pressure Controls](./pressure-controls.qmd) and the
+[Enrichment Summary](./enrichment-summary.qmd).
 
 **Selenium.** **No background value is issued**, for the same reason and more of it: 69% of
 selenium measurements were below the limit of quantification. The bulk estimates are tightly
@@ -304,5 +307,8 @@ so the metal/Al column is one choice among three and is aluminium's answer alone
 [Grain-Size-Normalised Background](./background-gsnorm.qmd) page sets out the disagreement.
 The [Pressure-Based Background](./background-pressure.qmd) page is Norway-only and is
 deliberately held out of the estimation, so its far band is corroboration here and evidence
-on the [Enrichment Summary](./enrichment-summary.qmd), never an input.
+on the [Enrichment Summary](./enrichment-summary.qmd), never an input. Its *near*-cage ratios
+are upper bounds, for reasons set out on [Pressure Controls](./pressure-controls.qmd); the far
+band used here is unaffected, being defined by the absence of a farm rather than by proximity
+to one.
 :::

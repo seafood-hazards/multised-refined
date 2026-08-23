@@ -193,13 +193,15 @@ is dropped rather than applied (see [Method Revisions](./method-revisions.qmd)).
 aluminium exists, which is most of the open-shelf data but almost none of the near-cage data,
 so the aquaculture sites remain largely unassessable from these measurements alone.
 
-Three further limitations belong on the record. Norwegian farms sit in sheltered,
-organic-rich, periodically anoxic fjords, so part of any near-cage signal for the
-redox-sensitive elements may be fjord geochemistry that happens to be co-located with farms
-rather than farm input; separating the two needs a matched comparison of farmed and unfarmed
-fjords. Distance to the nearest farm is also not the same thing as the pressure a sediment
-experienced, because the aquaculture reference includes closed sites and the sample date is
-not aligned to any operating period. And the [Enrichment Map](./enrichment-map.qmd) applies
+Three further limitations belong on the record. The distance gradient this page validates
+against is weaker than it looks: on raw concentrations it does not survive matching within a
+Norwegian municipality, and a sixth of the near-cage measurements were taken outside the
+farm's operating window ([Pressure Controls](./pressure-controls.qmd)). The verdicts here are
+aluminium-normalised, which is a stronger control than the raw gradient, but they can only be
+checked against it. What no distance design on this data can separate is a fjord-wide effect
+from no effect, because sediment 5 km from a farm in a farming municipality is not unfarmed
+sediment; that needs farmed and unfarmed fjords matched on basin, which this database cannot
+identify. And the [Enrichment Map](./enrichment-map.qmd) applies
 these thresholds to per-site averages, which makes it a **different classifier** from the
 per-measurement one tabulated here, not just a coarser drawing of it. This is a
 synthesis of the [Global Background](./background.qmd),
