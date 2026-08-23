@@ -45,6 +45,8 @@ dir.create(csv_dir, recursive = TRUE, showWarnings = FALSE)
 
 csvs <- c("refined_background_percentiles.csv",
           "refined_background_compare.csv",
+          "refined_background_sitewise.csv",
+          "refined_repeat_pressure.csv",
           "refined_background_meta.csv",
           "refined_gsnorm_percentiles.csv",
           "refined_gsnorm_compare.csv",
