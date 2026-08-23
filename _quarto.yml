@@ -42,6 +42,8 @@ website:
             href: background-pristine.qmd
           - text: "Enrichment Map"
             href: enrichment-map.qmd
+      - text: "Method Revisions"
+        href: method-revisions.qmd
       - text: "EFSA Submission"
         menu:
           - text: "EFSA Format v1"
