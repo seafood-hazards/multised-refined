@@ -21,8 +21,11 @@ fraction and compares them:
 
 Everything is on the **raw** value (mg/kg), split by fraction into **bulk**,
 **sieved63** (< 63 um) and **sieved20** (< 20 um), which are never pooled. Distributional
-outliers are dropped. Grain-size-normalised backgrounds (metal / Al, metal / Fe) are a
-later page.
+outliers are dropped, but only extreme ones: a value is flagged only if it is both more
+than 4 MADs from its group median on a log scale **and** a full order of magnitude away
+from that median, which catches registration errors rather than trimming the tail. It
+removes 414 of 115,820 measurements, 0.36%. Grain-size-normalised backgrounds
+(metal / Al, metal / Fe) are a later page.
 
 ```{r}
 #| label: setup
@@ -121,7 +124,14 @@ Read together with the numbers, the picture is:
   sampling is dominated by specific monitoring programmes rather than a clean
   coast-to-offshore gradient, so the offshore filter does less for them.
 
-The sensitivity to the cutoff (10, 20, 50 km) is small for the strong signals:
+### How much does the 10 km cutoff matter?
+
+Enough to matter, and most where the signal is strongest. Between the 10 km and the 50 km
+cutoff the bulk P90 falls **34% for copper** (34 to 22.4) and **40% for zinc** (130 to
+77.4), falls 11% for molybdenum, and *rises* 26% for manganese (932 to 1,173); only cobalt
+(+2%) and selenium (-2%) are stable. Copper and zinc are the two elements this page
+identifies as having the clearest coastal signal, and they are the two that keep falling as
+the cutoff moves further out.
 
 ```{r}
 #| label: sensitivity-table
@@ -133,6 +143,13 @@ cmp |>
   kable(caption = "Bulk 90th-percentile background (mg/kg) at three offshore cutoffs.")
 ```
 
+Two things follow. Ten kilometres is evidently not far enough out for copper and zinc,
+whose "> 10 km" background still carries coastal input, so the > 20 km column is the more
+conservative estimate for those two. And the choice propagates: the
+[Enrichment Factor](./background-ef.qmd) page builds its reference from this same > 10 km
+subset, so every copper and zinc enrichment factor is anchored to the least clean of the
+three cutoffs and is, if anything, too forgiving.
+
 ::: {.callout-note}
 This is one family of background estimates, not the final answer. "Offshore" is a coarse
 proxy for pristine (a site a few km out in a pressured fjord is not clean, and a coastal
@@ -141,4 +158,10 @@ not always the more natural one. The 90th percentile is a conservative upper bou
 background, not a typical value. Later pages will add normalised backgrounds and pressure
 based definitions (distance to aquaculture, enrichment factors) to triangulate. Iodine and
 selenium have too few measurements for a reliable background, especially when sieved.
+
+These percentiles also describe **the samples we hold, not the seabed**. All five sources
+are monitoring programmes whose sampling is driven by regulation and interest, so this is a
+convenience sample and its percentiles are not spatially representative. Re-sampled sites
+contribute one row per measurement, so heavily monitored locations, typically the pressured
+ones, carry more weight in these percentiles than lightly sampled ones do.
 :::

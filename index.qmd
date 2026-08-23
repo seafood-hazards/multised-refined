@@ -96,9 +96,9 @@ pressure held back for evaluation:
   aquaculture-free) background (EF), then testing whether the reported enrichment matches
   the aquaculture pressure gradient.
 - [Pristine Classification](./background-pristine.qmd): combining the background estimates
-  into a per-sample verdict (using no aquaculture information), evaluated against distance
-  to the cages, and noting where it cannot be made (the aquaculture sites lack the
-  aluminium needed).
+  into a per-sample verdict (using no aquaculture information), checked against distance
+  to the cages, and noting where it cannot be made (the samples around the farms lack the
+  aluminium needed, because the programme that collects them does not report it).
 - [Enrichment Map](./enrichment-map.qmd): all sites in grey with the potentially pristine
   samples (EF and strict) overlaid, per element and fraction.
 

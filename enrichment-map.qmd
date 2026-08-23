@@ -17,14 +17,20 @@ page:
 
 - **Pristine (EF < 1)**: the enrichment factor is under 1, so the site sits at or below the
   local (offshore) background once grain size is controlled by aluminium.
-- **Pristine (strict)**: EF < 1 **and** below the mixture threshold **and** below the
-  offshore P90, all three agreeing (a subset, drawn inside the EF ring).
+- **Pristine (strict)**: EF < 1 **plus** two raw-concentration screens, below the mixture
+  threshold and below the offshore P90 (a subset, drawn inside the EF ring). The two extra
+  screens are not grain-size controlled, so a muddy but clean site can drop out of this ring
+  on grain size alone.
 - **Unclassifiable**: no aluminium, so no EF can be formed (off by default). These cluster
   near the coast and the cages, which is the key limitation: the sites under most pressure
-  often cannot be classified.
+  often cannot be classified. The cause is a reporting gap rather than a sampling one, since
+  the Norwegian coastal programme that samples around the farms does not report aluminium at
+  any distance (see [Pristine Classification](./background-pristine.qmd)).
 
-None of the rules use aquaculture information. Values are averaged per site for the display,
-so this is a visual overview; the per-measurement counts on the analysis pages are the
+None of the rules use aquaculture information. Values are averaged per site **before** the
+thresholds are applied, so the map is a different classifier from the per-measurement one,
+not just a coarser drawing of it: a site whose measurements straddle a threshold can land
+either side of it once averaged. The per-measurement counts on the analysis pages are the
 authoritative ones.
 
 {{< include _db-setup.qmd >}}
@@ -120,6 +126,7 @@ pristine_ef_ok = d =>
 classify_pr = (d, key) =>
     key === "pristine_ef"     ? pristine_ef_ok(d)
   : key === "pristine_strict" ? (pristine_ef_ok(d)
+        && d.avg_value != null
         && th.mix != null && d.avg_value < th.mix
         && th.p90 != null && d.avg_value < th.p90)
   : key === "unclassifiable"  ? (th.efbg == null || d.avg_ratio_al == null)
