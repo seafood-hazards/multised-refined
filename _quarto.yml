@@ -32,6 +32,8 @@ website:
             href: background-mixture.qmd
           - text: "Pressure-Based Background"
             href: background-pressure.qmd
+          - text: "Pressure Controls"
+            href: pressure-controls.qmd
           - text: "Background Map"
             href: background-map.qmd
           - text: "Background Summary"

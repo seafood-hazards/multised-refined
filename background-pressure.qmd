@@ -92,15 +92,27 @@ The elements that light up are the ones aquaculture would touch:
 
 Two cautions. The gradient is not always monotonic: the < 1 km band can sit *below* the
 1-20 km bands (the immediate footprint differs from the broader zone), so the enrichment
-ratio is a summary, not a dose-response curve. And near-cage sediment is often muddier and
-more organic, so part of the rise is grain size; the
-[Grain-Size-Normalised](./background-gsnorm.qmd) page is the cross-check (the molybdenum
-and selenium signals, being feed and redox driven, largely survive it).
+ratio is a summary, not a dose-response curve. And the two bands are not the same sediment:
+the near band sits a median 400 m from shore and is 32% mud, the > 20 km band 83 km offshore
+and 76% mud. Here that difference runs *against* the finding rather than for it, since the
+muddier band is the one with the lower metal, but the comparison is still open shelf against
+coast. The [Grain-Size-Normalised](./background-gsnorm.qmd) page is the texture cross-check
+(the molybdenum and selenium signals, being feed and redox driven, largely survive it).
+
+**These ratios are upper bounds.** Two confounders can be measured directly on this data, and
+both cut the numbers down: many near-cage samples were taken before the farm was cleared or
+after it closed, and the far band is open shelf rather than the same fjord. Controlling for
+both takes copper from 3.2 to about 1.1 and zinc from 1.8 to about 0.9, and leaves molybdenum
+resting on 28 time-aligned measurements. The
+[Pressure Controls](./pressure-controls.qmd) page sets out what survives each control, and
+should be read with this one.
 
 ::: {.callout-note}
 This is Norway only, and "distance to a farm" is a coarse pressure measure (a distant but
 industrial site is not pristine; a near site in a well-flushed location may be clean). The
 > 20 km band is a practical low-pressure background, not a guaranteed pristine one. Read
 with the raw [Global Background](./background.qmd) and
-[Grain-Size-Normalised](./background-gsnorm.qmd) pages to triangulate.
+[Grain-Size-Normalised](./background-gsnorm.qmd) pages to triangulate, and with
+[Pressure Controls](./pressure-controls.qmd), which measures how much of each ratio is
+proximity to a farm and how much is the coastline the farms sit on.
 :::

@@ -175,6 +175,30 @@ The headline stays per measurement, because site-weighting discards real variati
 years and depths and "site" is only a rounded coordinate. But for manganese the two differ
 enough that the range is the answer rather than either figure.
 
+## 6. The pressure gradient is controlled, not assumed
+
+**Before.** The near-cage enrichment was the P90 within 1 km of a farm over the P90 beyond
+20 km, reported as the enrichment and used as the held-out yardstick for the enrichment
+factor.
+
+**Now.** That ratio is still the headline on the
+[Pressure-Based Background](./background-pressure.qmd) page, and it is labelled an upper
+bound. [Pressure Controls](./pressure-controls.qmd) reports what is left of it under two
+controls the database can apply.
+
+**What forced it.** Two assumptions inside the ratio turned out to be testable. Every sample
+is keyed to its nearest farm whether or not that farm existed when the sediment was
+collected, and the aquaculture reference carries clearance and withdrawal years, so the
+alignment can be checked. And the far band is the national pool beyond 20 km, which sits a
+median 83 km offshore against 400 m for the near band, so the contrast is open shelf against
+coast as much as far against near.
+
+**What moved.** Matched within a municipality, copper falls from 3.2 times to 1.04 and zinc
+from 1.8 to 0.85, and near sediment exceeds local far sediment in about half the
+municipalities either way. Restricted to samples contemporary with an operating farm,
+molybdenum falls from 13.5 times to 8.0 on 28 measurements, and selenium loses its near band
+entirely. What the controls cannot separate is a fjord-wide effect from no effect.
+
 ## The numbers that moved
 
 Bulk, the verdict measures. `withdrawn` marks a figure no longer published.
@@ -204,10 +228,14 @@ The full comparison, including the references and thresholds themselves, is in
 The two findings the site rests on both survive, and one is now better supported.
 
 **Near-cage enrichment survives grain-size control.** Copper, zinc, selenium and molybdenum
-are still clearly enriched approaching the cages after normalising to aluminium.
+are still clearly enriched approaching the cages after normalising to aluminium. Section 6
+qualifies this rather than overturning it: what does not survive a geographic control is the
+gradient on **raw** concentrations. The aluminium-normalised one is a better-controlled
+comparison, and it is also the one that rests on the small classifiable subset, so it cannot
+be matched within a municipality in turn.
 
 **The distance gradient is not an artefact of which programme sampled where.** This was an
-open question: the near bands are largely Vannmiljo and the far bands largely Mareano, so a
+open question: the near bands are largely Vannmiljø and the far bands largely Mareano, so a
 gradient pooled across sources could have been a difference between programmes. Restricting
 to one aluminium basis made the bands homogeneous enough to test it within a single source,
 and it holds in both:
