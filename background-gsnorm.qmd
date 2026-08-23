@@ -116,6 +116,13 @@ gsp |>
   kable()
 ```
 
+How well each basis works is itself testable, and the answer is uneven. Regressing metal on
+aluminium over the offshore reference, aluminium explains about half the variation of cobalt,
+copper and zinc in bulk and under a tenth of manganese, molybdenum and selenium, and under a
+twelfth of anything in a sieved fraction. A normalised background is only as good as the
+normaliser's grip on that particular metal:
+[Regression Normalisation](./background-regression.qmd) has the numbers.
+
 ::: {.callout-note}
 Normalising helps but does not settle the background: it trades the grain-size assumption
 for a normaliser assumption. Aluminium is the most defensible single choice, and the only

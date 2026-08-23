@@ -42,6 +42,8 @@ website:
         menu:
           - text: "Enrichment Factor"
             href: background-ef.qmd
+          - text: "Regression Normalisation"
+            href: background-regression.qmd
           - text: "Pristine Classification"
             href: background-pristine.qmd
           - text: "Enrichment Map"

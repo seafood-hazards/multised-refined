@@ -119,7 +119,11 @@ mineralogy rather than texture. That is the most likely reason the sieved metal 
 backgrounds sit so far below the bulk ones for molybdenum (8.2e-5 sieved63 against 4.4e-4
 bulk). Bulk EF is the grain-size-controlled number; sieved EF is closer to a
 mineralogy-controlled one, and the two are not the same quantity even though they share a
-name.
+name. Tested directly, aluminium explains under 8% of the metal's variation in every sieved
+group and under 0.1% in some, against about half in bulk for cobalt, copper and zinc: see
+[Regression Normalisation](./background-regression.qmd), which also shows that among the bulk
+elements only those three have a normaliser that predicts them at all. Read the manganese,
+molybdenum and selenium EF numbers, and every sieved EF number, with that in mind.
 
 ## Is the reference comparable across sources?
 

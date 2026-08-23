@@ -229,6 +229,15 @@ identical for most groups and differ by at most a few points.
   opinion.
 
 ::: {.callout-note}
+**Aluminium does not normalise every element equally well.** Regressed on the offshore
+reference, aluminium explains about half the variation of cobalt, copper and zinc in bulk, and
+under a tenth of manganese in bulk or of anything in a sieved fraction
+([Regression Normalisation](./background-regression.qmd)). Where it explains nothing, metal /
+Al is close to metal divided by an unrelated number, so the manganese row and every sieved row
+in the table above are weaker evidence than their sample sizes suggest. Whether verdicts should
+be withheld there, as they already are where the aluminium basis is wrong, is an open question
+this site has not settled.
+
 **EF is relative, and relative to a choice.** The reference is the local offshore
 distribution of metal / Al, not a crustal abundance, which is deliberate (EFSA guidance
 prefers a data-driven local reference) and means these EF values and the 1-2, 2-5, >5 classes
