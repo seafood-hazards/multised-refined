@@ -155,6 +155,26 @@ percentile", which is how the [Global Background](./background.qmd) page and the
 `background_p90` column already define background. The pair also exposes an inconsistency
 the site was carrying, with two different definitions of background on different pages.
 
+## 5. Repeat sampling is measured, not assumed away
+
+**Before.** The background percentiles were per measurement, with no statement of what that
+weighting implied.
+
+**Now.** They are still per measurement, and the [Global Background](./background.qmd) page
+carries a site-weighted sensitivity beside them, plus the test of whether the weighting
+actually biases anything.
+
+**What forced it.** A site visited in ten years counted ten times. That matters only if
+revisited sites differ systematically from the rest, which was plausible and untested.
+Tested, it holds: a site sampled in four or more years sits a median 0.75 km from the
+nearest farm against 1.96 km for a site sampled once. Reweighting one-value-per-site moves
+the offshore bulk P90 down by 4% for cobalt and zinc, 15% for copper and **32% for
+manganese**, always downward.
+
+The headline stays per measurement, because site-weighting discards real variation across
+years and depths and "site" is only a rounded coordinate. But for manganese the two differ
+enough that the range is the answer rather than either figure.
+
 ## The numbers that moved
 
 Bulk, the verdict measures. `withdrawn` marks a figure no longer published.

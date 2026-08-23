@@ -40,6 +40,8 @@ rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
 pct  <- rd("refined_background_percentiles.csv")
 cmp  <- rd("refined_background_compare.csv")
 meta <- rd("refined_background_meta.csv")
+sw   <- rd("refined_background_sitewise.csv")
+rp   <- rd("refined_repeat_pressure.csv")
 
 elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
 cat_levels  <- c("bulk", "sieved63", "sieved20")
@@ -150,6 +152,59 @@ conservative estimate for those two. And the choice propagates: the
 subset, so every copper and zinc enrichment factor is anchored to the least clean of the
 three cutoffs and is, if anything, too forgiving.
 
+## Does repeat sampling tilt the percentiles?
+
+These percentiles are per **measurement**, so a site visited in ten years counts ten times
+and a site visited once counts once. That only matters if repeat-sampled sites differ
+systematically from the rest, which is exactly what a monitoring programme's revisits would
+do. It is testable, so here is the test.
+
+```{r}
+#| label: repeat-pressure
+rp |>
+  transmute(`Years sampled` = revisits, `sites` = n_sites,
+            `median distance to coast, km` = median_dist_to_coast_km,
+            `% more than 10 km offshore` = pct_offshore_gt10km,
+            `sites with a farm distance` = n_sites_with_aqua,
+            `median distance to farm, km` = median_dist_to_aqua_km,
+            `% within 5 km of a farm` = pct_within_5km_of_farm) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Revisited sites **are** the pressured ones. A site sampled in four or more years sits a
+median 0.75 km from the nearest farm against 1.96 km for a site sampled once, and only 17%
+of them are more than 10 km offshore against 27% of the singles. The last two columns cover
+Norway only, since that is where a distance to a farm exists at all; counting the rest as
+"far from a farm" would be counting "not Norwegian" as "not pressured".
+
+So the weighting is worth a sensitivity. Below, the offshore P90 computed the usual way
+against the same figure with **one value per site** (that site's median) so every place
+counts once:
+
+```{r}
+#| label: sitewise-table
+sw |>
+  filter(cat == "bulk", subset == "offshore>10km", reliable) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Element = symbol, `measurements` = n_meas, `sites` = n_sites,
+            `P90 per measurement` = p90_meas, `P90 per site` = p90_site,
+            `ratio` = p90_ratio) |>
+  arrange(Element) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+The effect is real but uneven. Cobalt and zinc barely move (within 5%), copper falls 15%,
+and **manganese falls 32%**: its per-measurement background is meaningfully inflated by
+revisited sites. Every ratio that moves, moves **down**, which is the direction the table
+above predicts.
+
+The headline figures on this page stay per measurement, because switching would discard the
+real within-site variation across years and depths, and because "site" here is only latitude
+and longitude rounded to three decimals. But the site-weighted column is the better estimate
+of *the seabed* as opposed to *the sampling*, and for manganese the two differ enough that
+the range, not either number, is the answer. Both are in
+`refined_background_sitewise.csv`.
+
 ::: {.callout-note}
 This is one family of background estimates, not the final answer. "Offshore" is a coarse
 proxy for pristine (a site a few km out in a pressured fjord is not clean, and a coastal
@@ -161,7 +216,7 @@ selenium have too few measurements for a reliable background, especially when si
 
 These percentiles also describe **the samples we hold, not the seabed**. All five sources
 are monitoring programmes whose sampling is driven by regulation and interest, so this is a
-convenience sample and its percentiles are not spatially representative. Re-sampled sites
-contribute one row per measurement, so heavily monitored locations, typically the pressured
-ones, carry more weight in these percentiles than lightly sampled ones do.
+convenience sample and its percentiles are not spatially representative. No reweighting
+fixes that: the section above can correct for revisited sites being counted many times, but
+not for the places nobody sampled.
 :::
