@@ -111,6 +111,16 @@ efd |>
   kable(format.args = list(big.mark = ","))
 ```
 
+One reading caution on the sieved rows. A sieved fraction is already a grain-size control:
+the sample has been cut to particles below 63 or 20 um, so most of the texture variation is
+gone before the chemistry starts. Dividing by aluminium on top of that controls grain size
+twice, and the second control acts on whatever variation in aluminium is left, which is
+mineralogy rather than texture. That is the most likely reason the sieved metal / Al
+backgrounds sit so far below the bulk ones for molybdenum (8.2e-5 sieved63 against 4.4e-4
+bulk). Bulk EF is the grain-size-controlled number; sieved EF is closer to a
+mineralogy-controlled one, and the two are not the same quantity even though they share a
+name.
+
 ## Is the reference comparable across sources?
 
 Per source, bulk: how much of the pooled reference that source supplies, how its own
@@ -179,14 +189,23 @@ efp |>
   labs(x = "distance to nearest aquaculture farm", y = "median EF (log)")
 ```
 
-The signal holds. **Copper** climbs to a median EF above 5 right at the cages (and falls to
-background beyond 20 km), **selenium** and **molybdenum** to about 4-5, **zinc** to about
-2.5, all after grain-size normalisation, so these are genuine near-cage enrichments (copper
-antifouling, selenium feed, molybdenum from the oxygen-poor near-cage sediment). **Cobalt
-and manganese** stay at or below background throughout. Normalising also **sharpens the
-picture**: in the raw values copper was actually *lower* right at the cages (those sites
-are sandier), but per aluminium it is clearly the most enriched there, the near-cage
-gradient the raw numbers hid.
+The signal holds here. **Copper** climbs to a median EF above 2 right at the cages (and
+falls to background beyond 20 km), **selenium** and **molybdenum** to about 4-6, **zinc** to
+about 2, all after grain-size normalisation, so these are consistent with genuine near-cage
+enrichments (copper antifouling, selenium feed, molybdenum from the oxygen-poor near-cage
+sediment). **Cobalt and manganese** stay at or below background throughout. Normalising also
+**sharpens the picture**: in the raw values copper was actually *lower* right at the cages
+(those sites are sandier), but per aluminium it is clearly the most enriched there, the
+near-cage gradient the raw numbers hid.
+
+That said, the same gradient on **raw** values does not survive a geographic control: compare
+near-cage sediment against sediment 5 km away in the same municipality rather than against the
+open shelf, and copper falls from 3.2 times to about 1.1 and zinc from 1.8 to about 0.9. This
+figure is a different and better-controlled comparison, but it rests on the roughly 1% of
+near-cage samples that carry aluminium, which is far too few to match within a municipality.
+So the aluminium-normalised gradient is currently the strongest evidence for a near-cage
+effect **and** the least representative subset of it. See
+[Pressure Controls](./pressure-controls.qmd).
 
 ::: {.callout-note}
 EF depends on its background: here the local offshore median of metal / Al, a defensible

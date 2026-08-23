@@ -86,6 +86,9 @@ baseline per element and fraction:
   the spatial background.
 - [Pressure-Based Background](./background-pressure.qmd): background from distance to
   aquaculture, and the near-cage enrichment (Norway), used to evaluate the enrichment.
+- [Pressure Controls](./pressure-controls.qmd): what is left of that near-cage enrichment
+  once the comparison is matched within a municipality and restricted to samples taken while
+  the farm was operating. Copper and zinc lose almost all of it.
 - [Background Map](./background-map.qmd): all sites in grey with the offshore, below-P90
   and below-mixture background samples overlaid, per element and fraction.
 - [Background Summary](./background-summary.qmd): the four estimates side by side per
