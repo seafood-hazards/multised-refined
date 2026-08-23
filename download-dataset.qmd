@@ -64,19 +64,44 @@ dict |>
 
 ## The verdict columns
 
-Nine of the columns are not measurements but conclusions, carried over from the analysis
-pages so the file can be used without reproducing them.
+Several columns are not measurements but conclusions, carried over from the analysis pages
+so the file can be used without reproducing them.
+
+::: {.callout-important}
+## The verdict columns changed in v0.9.0
+
+Verdicts computed before v0.9.0 will not reproduce from this file, and two elements no
+longer carry them at all. The methods, what forced each change and the size of every shift
+are set out on [Method Revisions](./method-revisions.qmd). `ef` and `pristine_ef` keep their
+original definitions, so an earlier download remains a subset of this one rather than
+contradicting it.
+:::
 
 **Pristine**, from [Pristine Classification](./background-pristine.qmd), is grain-size
 controlled and therefore needs aluminium. Where aluminium is missing the sample is left
-**unclassified** (`classifiable` FALSE, both pristine columns empty) rather than guessed:
+**unclassified** (`classifiable` FALSE, both pristine columns empty) rather than guessed.
+Two further restrictions now apply:
+
+- `al_basis` records the aluminium measurement basis inferred for the subsample. Only
+  samples on the basis their fraction adopted receive a verdict; the rest are unclassified
+  for the same reason a sample with no aluminium is.
+- **Selenium and molybdenum carry no verdict at all.** Most of their measurements fell
+  below the limit of quantification and were removed upstream, so what survives is an upper
+  tail rather than a background. Their concentrations are still published.
 
 - `pristine_ef`: the permissive rule, EF < 1, where EF is the element/Al ratio divided by
   the offshore background ratio. This is the rule an EFSA submission would use.
 - `pristine_strict`: the conservative rule. EF < 1 **and** below the mixture threshold
   **and** below the offshore P90. The two extra criteria are raw-concentration screens
   rather than peers of EF < 1, so a muddy but clean sample can fail this rule on grain size
-  alone; see [Pristine Classification](./background-pristine.qmd).
+  alone; see [Pristine Classification](./background-pristine.qmd). Where the mixture
+  threshold is not usable for an element, that criterion drops out rather than being
+  applied.
+- `ef_p90ref` and `pristine_ef_p90ref`: the same rule read against the offshore 90th
+  percentile of element/Al instead of its median. EF < 1 against a median denominator fails
+  half the reference population by construction; against the P90 it means "below the
+  offshore P90", which is how `background_p90` defines background. The gap between the two
+  is the width of the answer.
 
 **Background** is the weaker question of whether the concentration alone sits in the
 background population. Both are raw-concentration rules, so unlike the pristine columns

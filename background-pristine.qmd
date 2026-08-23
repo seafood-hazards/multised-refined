@@ -35,9 +35,11 @@ EF < 1 is grain-size controlled; the other two are screens on the raw concentrat
 same kind of test this page has just rejected on its own. ANDing them onto EF < 1 cannot
 make a sample falsely pristine, only falsely non-pristine, which is the safe direction for a
 conservative rule. It does mean a **muddy but clean** sample can fail the strict rule on
-grain size alone. Cobalt below is the clearest case, 56% pristine on the EF rule against 20%
-strict: that gap reflects cobalt's unreliable mixture threshold and its raw values, not
-evidence that cobalt is enriched.
+grain size alone. Cobalt used to be the clearest case, 56% pristine on the EF rule against
+20% strict, which reflected its unreliable mixture threshold rather than any enrichment.
+That threshold is now recognised as unusable and dropped from the rule, so the two rules
+have converged for cobalt; the mechanism still applies wherever a usable threshold sits low
+against muddy sediment.
 
 ```{r}
 #| label: setup
@@ -61,9 +63,12 @@ theme_set(theme_minimal(base_size = 12))
 ## How much is pristine, and how much is classifiable
 
 Among the samples that can be classified (those with aluminium), the share flagged pristine
-under each rule, bulk. Both rules rest on EF < 1, and the bulk EF reference is not
-comparable across data sources (see the [Enrichment Factor](./background-ef.qmd) page), so
-these bulk shares average two incompatible aluminium bases and are provisional. The **classifiable** column is the catch: for copper and zinc, only
+under each rule, bulk. Both rules rest on EF < 1, whose reference is now computed within a
+single aluminium measurement basis (see the [Enrichment Factor](./background-ef.qmd) page).
+That is why the **classifiable** column is low: a sample off its fraction's basis is
+withdrawn rather than misjudged. **Selenium and molybdenum are absent** because their
+verdicts are withheld entirely, most of their measurements having fallen below the limit of
+quantification and been removed upstream ([Method Revisions](./method-revisions.qmd)). The **classifiable** column is the catch: for copper and zinc, only
 about a quarter of samples carry the aluminium needed to judge them at all.
 
 ```{r}
@@ -141,18 +146,31 @@ monitoring would close most of this gap on its own.
 On the samples that *can* be classified, the pristine share drops as sites approach the
 coast and the farms, which is the direction a verdict tracking real pressure should move.
 
-The section above makes this a weak test rather than a confirmation, though. The classifiable
-samples are not the same population across the bands: within 1 km of a farm they are roughly
-350 Vannmiljø and 46 Mareano measurements, while beyond 20 km they are roughly 12,600 Mareano
-and 38 Vannmiljø. The distance axis is very nearly a source axis, so part of any trend along
-it is a difference between monitoring programmes and the sea areas they cover. Read the
-figure as consistency, not as validation: a real test has to be run **within a single
-source**, and has not yet been done. Near-cage points also rest on few classifiable samples,
-so read the trend, not the wiggle.
+The bands are not sampled by the same programmes, so this could have been a difference
+between monitoring programmes wearing a distance label. Restricting the reference to one
+aluminium basis made them homogeneous enough to test that directly, by repeating the
+comparison **within a single source**, and it holds in both sources that span more than one
+band:
+
+```{r}
+#| label: within-source-table
+vsrc <- rd("refined_pristine_validation_source.csv")
+vsrc |>
+  mutate(Band = factor(band, levels = c("<1km", "1-5km", "5-20km", ">20km"))) |>
+  transmute(Source = source, Band, samples = n,
+            `% pristine (EF rule)` = pct_ef, `% pristine (strict)` = pct_strict) |>
+  arrange(Source, Band) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Mareano rises from 12% pristine under 1 km to 49% beyond 20 km, and Vannmiljø from 16% to
+29% across the three bands it spans. Both rise monotonically, so **the gradient is not an
+artefact of which programme sampled where**. Near-cage points still rest on few classifiable
+samples, so read the trend, not the wiggle.
 
 ```{r}
 #| label: validation-fig
-#| fig-cap: "Percentage pristine among classifiable samples, by distance to aquaculture and to coast (EF rule). Pristine rises with distance from pressure, but the classifiable samples in the near and far bands come from different monitoring programmes, so the comparison is confounded with source."
+#| fig-cap: "Percentage pristine among classifiable samples, by distance to aquaculture and to coast (EF rule). Pristine rises with distance from pressure; the table above shows the same rise holds within each source separately."
 #| fig-width: 8.5
 #| fig-height: 3.4
 val |>
@@ -169,9 +187,9 @@ val |>
 
 ::: {.callout-note}
 "Pristine" here means at or below the local background by a grain-size-controlled measure,
-per element, not an absolute or a site-level judgement. The strict rule inherits the
-distribution-mixture caveat (unreliable where there is no clear two-population split, as for
-cobalt). The honest headline is the coverage gap: the classification is trustworthy where
+per element, not an absolute or a site-level judgement. The strict rule no longer inherits
+an unreliable mixture threshold: where the distribution does not support one, that criterion
+is dropped rather than applied (see [Method Revisions](./method-revisions.qmd)). The honest headline is the coverage gap: the classification is trustworthy where
 aluminium exists, which is most of the open-shelf data but almost none of the near-cage data,
 so the aquaculture sites remain largely unassessable from these measurements alone.
 
