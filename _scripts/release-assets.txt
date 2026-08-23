@@ -17,6 +17,8 @@ refined_pressure_meta.csv
 refined_ef_background.csv
 refined_ef_dist.csv
 refined_ef_pressure.csv
+refined_ef_source.csv
+refined_ef_region.csv
 refined_ef_meta.csv
 refined_mixture_components.csv
 refined_mixture_hist.csv
