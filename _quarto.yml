@@ -42,6 +42,8 @@ website:
         menu:
           - text: "Enrichment Factor"
             href: background-ef.qmd
+          - text: "Geo-Accumulation Index"
+            href: background-igeo.qmd
           - text: "Regression Normalisation"
             href: background-regression.qmd
           - text: "Pristine Classification"
