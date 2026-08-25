@@ -7,10 +7,10 @@ subtitle: "What survives when the near-cage comparison is matched and time-align
 th { white-space: nowrap; }
 ```
 
-The [Pressure-Based Background](./background-pressure.qmd) page reads the near/far P90
-ratio as near-cage enrichment: copper 3.2 times, zinc 1.8 times, molybdenum 13.5 times.
-That reading assumes the two bands differ only in pressure. They differ in two other ways
-that this database can measure, so this page measures them.
+A near/far P90 ratio is read as near-cage enrichment: on the axis this page uses, copper
+3.2 times, zinc 1.8 times, molybdenum 13.5 times. That reading assumes the two bands differ
+only in pressure. They differ in two other ways that this database can measure, so this page
+measures them.
 
 - **Time.** Every sample is keyed to its *nearest* farm, whether or not that farm existed
   when the sediment was collected. The aquaculture reference carries the clearance year and
@@ -24,6 +24,24 @@ that this database can measure, so this page measures them.
 Nothing here feeds a verdict. This page qualifies the pressure gradient the
 [Enrichment](./background-ef.qmd) pages use as their held-out yardstick, and the result is
 that the yardstick is softer than it looked.
+
+::: {.callout-warning
+title="This page is still computed on the old aquaculture axis"}
+The [Pressure-Based Background](./background-pressure.qmd) page was rebuilt in August 2026
+to measure distance to the nearest **fish farm**, and to take its background from a far
+band with the stated-pressure monitoring removed. The controls on this page still use
+distance to the nearest **aquaculture site of any kind**, which counts land-based smolt
+plants and mussel rafts as farms, and the raw far band.
+
+The reason is the temporal control: it needs to know *which* farm a sample is nearest to,
+so it can ask whether that farm was licensed when the sediment was sampled, and the only
+farm identity on `site` is the nearest aquaculture site rather than the nearest fish farm.
+The pipeline now records the fish farm's identity as well, but the databases have to be
+rebuilt before this page can use it.
+
+So read the ratios here as *how much each control removes*, which is the point of the
+page, and not as absolute enrichment. The absolute figures are on the rebuilt page.
+:::
 
 ```{r}
 #| label: setup

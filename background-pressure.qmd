@@ -1,6 +1,6 @@
 ---
 title: "Pressure-Based Background"
-subtitle: "Background from distance to aquaculture, and the near-cage enrichment"
+subtitle: "Background from distance to a fish farm, and what the size of that farm adds"
 ---
 
 ```{css, echo=FALSE}
@@ -8,21 +8,32 @@ th { white-space: nowrap; }
 ```
 
 Instead of a spatial proxy for pristine, this page uses a direct **pressure gradient**:
-distance to the nearest aquaculture farm. Sites far from any farm are the low-pressure
+distance to the nearest **fish farm**. Sites far from any farm are the low-pressure
 **background**; sites near the cages show the **enrichment**. This is the aquaculture
 question asked directly, and it is **Norway only** (the aquaculture reference is
 Norwegian).
 
-For each element and fraction, the value is summarised in distance-to-aquaculture bands
-(< 1 km, 1-5 km, 5-20 km, > 20 km). The **> 20 km** band is read as the background; the
-ratio of the nearest band to it (the 90th percentiles) is the near-cage enrichment.
+For each element and fraction, the value is summarised in distance bands (< 1 km, 1-5 km,
+5-20 km, > 20 km). The **> 20 km** band is read as the background; the ratio of the
+nearest band to it (the 90th percentiles) is the near-cage enrichment.
 
-Because it is built from the aquaculture positions, this pressure gradient is held out of
-the background and pristine estimates themselves. Its role is to **evaluate** them: the
+Because it is built from the farm positions, this pressure gradient is held out of the
+background and pristine estimates themselves. Its role is to **evaluate** them: the
 [Enrichment Factor](./background-ef.qmd) and [Pristine
 Classification](./background-pristine.qmd) pages are estimated without aquaculture
 information, and this page is the yardstick that the enrichment they report matches the
 real pressure.
+
+::: {.callout-important
+title="This page was rebuilt in August 2026 and its numbers moved"}
+It used to measure distance to the nearest **aquaculture site of any kind**, and a
+land-based smolt plant and a mussel raft are both aquaculture. Two corrections follow,
+and they push in opposite directions: the near band was too generous (it counted samples
+next to facilities that put nothing on the seabed) and the far band was not a background
+at all (over half of it was contaminated-seabed monitoring). The old copper figure of
+about 3.2x and molybdenum figure of about 13x came from that pairing. Both sections
+below show the change rather than quietly replacing it.
+:::
 
 ```{r}
 #| label: setup
@@ -34,85 +45,284 @@ library(knitr)
 bdir <- "data/refined_summary"
 rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
                            check.names = FALSE)
-pp  <- rd("refined_pressure_percentiles.csv")
-pc  <- rd("refined_pressure_compare.csv")
+pp   <- rd("refined_pressure_percentiles.csv")
+pc   <- rd("refined_pressure_compare.csv")
+ax   <- rd("refined_pressure_axis.csv")
+axd  <- rd("refined_pressure_axis_dropped.csv")
+sz   <- rd("refined_pressure_size.csv")
+szc  <- rd("refined_pressure_size_covariates.csv")
+st   <- rd("refined_pressure_stated.csv")
 
 elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
 bin_levels  <- c("<1km", "1-5km", "5-20km", ">20km")
-pp$symbol <- factor(pp$symbol, levels = elem_levels)
-pp$aq_bin <- factor(pp$aq_bin, levels = bin_levels)
+band_levels <- c("small", "medium", "large")
+pp$symbol   <- factor(pp$symbol, levels = elem_levels)
+pp$dist_bin <- factor(pp$dist_bin, levels = bin_levels)
 theme_set(theme_minimal(base_size = 12))
 ```
 
-## Concentration versus distance to aquaculture
+## The axis: a fish farm, not aquaculture
+
+A fish farm is the pressure this work is about, because the mechanisms are feed
+(selenium, zinc, and the organic enrichment that drives the redox chemistry) and the
+copper in net antifouling. A mussel raft has none of them, and a land-based smolt plant
+puts its effluent through a pipe rather than onto the seabed under the licence
+coordinate. Counting either as "near a farm" fills the near band with samples that carry
+none of the pressure the band exists to isolate.
+
+The refined `site` table carries both distances, so the change can be shown rather than
+asserted. What the old axis added to the near band, by the kind of facility the sample
+was actually next to:
+
+```{r}
+#| label: dropped-table
+axd |>
+  transmute(Placement = placement, `Licensed in` = capacity_unit,
+            Measurements = n, `% of dropped` = pct) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+```{r}
+#| label: dropped-note
+#| echo: false
+#| results: asis
+land <- round(sum(axd$pct[axd$placement == "land"]), 1)
+sea_other <- round(sum(axd$pct[axd$placement != "land"]), 1)
+cat(sprintf(
+  "So **%s%%** of what the old near band gained sat next to a *land-based* facility, and %s%% next to something at sea that is not a fish farm (mostly blue mussel, licensed by area in decare). None of them is a sea cage.\n",
+  land, sea_other))
+```
+
+The effect on the two elements with enough data to see it:
+
+```{r}
+#| label: axis-table
+ax |>
+  filter(cat == "bulk", !is.na(enrich_near_farm), n_near_farm >= 100) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Element = symbol,
+            `n near (farm)` = n_near_farm,
+            `n added by old axis` = n_near_gain,
+            `old ratio` = enrich_near_aqua,
+            `new ratio, raw far band` = enrich_near_farm) |>
+  arrange(Element) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+The new raw ratios are *below* 1, which is the second problem rather than a finding about
+farms.
+
+## The background had to be cleaned too
+
+The far band is only a background if what sits in it is unpressured, and it is not.
+Vannmiljø files why each sample was taken, and the > 20 km pool turns out to be more than
+half **stated pressure**: the contaminated-seabed, industry and sewage programmes, which
+is urban fjord sediment carrying the very metals being measured.
+
+```{r}
+#| label: farband-table
+pc |>
+  filter(cat == "bulk", !is.na(enrich_near)) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Element = symbol,
+            `n far` = `n_>20km`, `P90 far, raw` = `>20km`,
+            `% stated pressure` = pct_far_stated,
+            `n far, cleaned` = n_far_clean,
+            `P90 far, cleaned` = p90_far_clean) |>
+  arrange(Element) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Removing the stated-pressure rows takes the copper background from 102 to 25.7 mg/kg and
+the zinc background from 273 to 126.5. Only rows a provider has **stated** are pressure
+monitoring are removed; the four sources that record no programme keep every row, so this
+removes stated pressure and never inferred pressure.
+
+**Every ratio below is taken against the cleaned far band.**
+
+## Concentration versus distance to a fish farm
 
 The 90th percentile by distance band, bulk (reliable groups only). A value that falls as
 distance grows is a pressure signal; the far band is the background.
 
 ```{r}
 #| label: gradient-fig
-#| fig-cap: "Bulk 90th-percentile concentration by distance to the nearest aquaculture farm (log scale). Molybdenum, copper, zinc and selenium fall with distance (near-cage enrichment); manganese does not."
+#| fig-cap: "Bulk 90th-percentile concentration by distance to the nearest fish farm (log scale). Only cobalt falls monotonically with distance. Copper, zinc and molybdenum peak in the 1-20 km bands rather than under the cages, and manganese is diagenetic rather than a pressure signal."
 #| fig-width: 8.5
 #| fig-height: 4.4
 pp |>
-  filter(cat == "bulk", reliable, symbol %in% c("CO","CU","MN","MO","SE","ZN")) |>
-  ggplot(aes(aq_bin, p90, group = symbol, colour = symbol)) +
+  filter(cat == "bulk", reliable, symbol %in% c("CO","CU","MN","MO","ZN")) |>
+  ggplot(aes(dist_bin, p90, group = symbol, colour = symbol)) +
   geom_line(linewidth = 0.7) +
   geom_point(size = 2) +
   scale_y_log10() +
   scale_colour_brewer(palette = "Dark2", name = NULL) +
-  labs(x = "distance to nearest aquaculture farm", y = "P90 concentration, mg/kg (log)")
+  labs(x = "distance to nearest fish farm", y = "P90 concentration, mg/kg (log)")
 ```
 
 ## Near-cage enrichment
 
-The nearest-band (< 1 km) 90th percentile over the far background (> 20 km):
+The nearest-band (< 1 km) 90th percentile over the cleaned far background (> 20 km).
+Groups below 30 measurements in the near band are marked rather than dropped, because
+which elements *lack* near-cage data is itself the finding:
 
 ```{r}
 #| label: enrich-table
 pc |>
-  filter(cat == "bulk", !is.na(enrich_near)) |>
+  filter(cat == "bulk", !is.na(enrich_near_clean)) |>
   mutate(symbol = factor(symbol, levels = elem_levels)) |>
   transmute(Element = symbol,
-            `<1 km` = `<1km`, `>20 km (bg)` = `>20km`,
-            `enrichment (near/far)` = enrich_near) |>
-  arrange(desc(`enrichment (near/far)`)) |>
+            `n < 1 km` = `n_<1km`,
+            `P90 < 1 km` = `<1km`,
+            `P90 far (cleaned)` = p90_far_clean,
+            `enrichment` = enrich_near_clean,
+            Reading = if_else(`n_<1km` >= 30, "", "too few to read")) |>
+  arrange(desc(enrichment)) |>
   kable()
 ```
 
-The elements that light up are the ones aquaculture would touch:
+What survives:
 
-- **Molybdenum** (about 13x) and **selenium** (about 5x): molybdenum accumulates in the
-  oxygen-poor, organic-rich sediment that builds up under cages, and selenium is a feed
-  additive, so both are strong near-cage signals.
-- **Copper** (about 3x): antifouling treatment of nets and cages.
-- **Zinc** (about 2x): feed and galvanised structures.
-- **Manganese** falls below 1 (near lower than far): it is diagenetic, not a pressure
-  signal, the same behaviour it showed offshore.
+- **Copper, about 2.6x**, on 11,475 measurements. Antifouling treatment of nets and
+  cages. This is the one strong, well-supported near-cage signal on the page.
+- **Cobalt, about 1.5x**, but on 33 measurements, which is barely over the threshold.
+- **Zinc, about 1.1x**, on 10,277 measurements. Feed and galvanised structures, and on
+  this axis the effect is small.
+- **Manganese, 0.35**, near well below far. It is diagenetic, not a pressure signal, the
+  same behaviour it showed offshore.
+- **Molybdenum and selenium have almost no near-cage data at all**: 21 and 1 bulk
+  measurements within 1 km of a sea cage. The old page reported them as the strongest
+  signals on the page (about 13x and about 5x). Those figures came from the near band
+  when it still included land-based facilities. They are withdrawn, not restated. Both
+  elements are also under the [LOQ censoring
+  decision](./background.qmd), so they carry no verdict anywhere in this project.
 
-Two cautions. The gradient is not always monotonic: the < 1 km band can sit *below* the
-1-20 km bands (the immediate footprint differs from the broader zone), so the enrichment
-ratio is a summary, not a dose-response curve. And the two bands are not the same sediment:
-the near band sits a median 400 m from shore and is 32% mud, the > 20 km band 83 km offshore
-and 76% mud. Here that difference runs *against* the finding rather than for it, since the
-muddier band is the one with the lower metal, but the comparison is still open shelf against
-coast. The [Grain-Size-Normalised](./background-gsnorm.qmd) page is the texture cross-check
-(the molybdenum and selenium signals, being feed and redox driven, largely survive it).
+The gradient is not a dose-response curve. Copper, zinc and molybdenum all peak in the
+1-20 km bands rather than under the cages, which is what the next section is for.
 
-**These ratios are upper bounds.** Two confounders can be measured directly on this data, and
-both cut the numbers down: many near-cage samples were taken before the farm was cleared or
-after it closed, and the far band is open shelf rather than the same fjord. Controlling for
-both takes copper from 3.2 to about 1.1 and zinc from 1.8 to about 0.9, and leaves molybdenum
-resting on 28 time-aligned measurements. The
-[Pressure Controls](./pressure-controls.qmd) page sets out what survives each control, and
-should be read with this one.
+## Does the size of the farm change the signal
+
+Norwegian finfish licences are issued in MTB (maximum permitted standing biomass), and
+the standard concession is 780 t, so the refined `site` table carries the nearest farm's
+licensed capacity and a size band: **small** (up to 2 concessions), **medium** (up to 4),
+**large** (above 4). A 780 t farm and a 19,000 t farm at the same distance are not the
+same pressure.
+
+This is a better test than near against far, because both sides sit under a cage in a
+fjord: the setting is roughly held constant and only the licensed capacity moves.
+
+```{r}
+#| label: size-table
+sz |>
+  filter(cat == "bulk", reliable) |>
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         band = factor(band, levels = band_levels)) |>
+  transmute(Element = symbol, `Size band` = band,
+            `Median MTB, t` = mtb_median, n = n,
+            `P90 < 1 km` = p90, `P90 far (cleaned)` = p90_far_clean,
+            enrichment = enrich_clean) |>
+  arrange(Element, `Size band`) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+```{r}
+#| label: size-fig
+#| fig-cap: "Near-cage enrichment by the licensed size of the nearest farm, bulk, cleaned far background. Both elements peak at medium and fall at large, which is the opposite of a dose-response."
+#| fig-width: 7
+#| fig-height: 3.6
+sz |>
+  filter(cat == "bulk", reliable) |>
+  mutate(band = factor(band, levels = band_levels)) |>
+  ggplot(aes(band, enrich_clean, group = symbol, colour = symbol)) +
+  geom_hline(yintercept = 1, linetype = 2, colour = "grey55") +
+  geom_line(linewidth = 0.7) +
+  geom_point(size = 2.6) +
+  scale_colour_brewer(palette = "Dark2", name = NULL) +
+  labs(x = "licensed size of the nearest fish farm",
+       y = "near/far enrichment (P90)")
+```
+
+Only copper and zinc have enough near-cage data for the split; cobalt, manganese and
+molybdenum fall under 30 measurements in every band. Both behave the same way: small and
+medium are close, and **large is the lowest of the three**. Copper goes 2.91, 3.15, 2.13
+and zinc 1.11, 1.26, 0.95.
+
+That is the opposite of a dose-response, and the reason is almost certainly siting rather
+than chemistry:
+
+```{r}
+#| label: size-cov-table
+szc |>
+  mutate(band = factor(band, levels = band_levels)) |>
+  transmute(`Size band` = band, Sites = n_sites, `Median MTB, t` = mtb_median,
+            `Median depth, m` = median_depth_m,
+            `Median distance to coast, km` = median_dist_coast_km,
+            `Median mud, %` = median_fines_pct,
+            `% with a mud measurement` = pct_with_fines) |>
+  arrange(`Size band`) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Large and medium farms sit in roughly **twice the water depth** of small ones (107 m and
+121 m against 66 m) and further from shore. Norway licenses the big farms into deep,
+well-flushed water precisely because it disperses the load, so a bigger farm depositing
+more organic matter over a larger and better-flushed footprint can leave *less* under the
+licence coordinate. A flat or inverted size response is therefore not evidence that the
+pressure is absent, and this table is what the one above has to be read against.
+
+The honest reading: **size does not give a clean dose-response on this data, and the
+confounder is large enough to explain why.** Separating the two needs depth-matched
+comparison within a size band, which this page does not do.
+
+## The provider's own label agrees with the geometry
+
+Vannmiljø records why a sample was taken, independently of any coordinate arithmetic. If
+the distance axis is measuring what it claims to, the rows the provider filed as
+aquaculture monitoring should sit near a farm, and the ones filed as reference conditions
+should not:
+
+```{r}
+#| label: stated-table
+st |>
+  filter(pressure_class %in% c("aquaculture", "reference", "pressure")) |>
+  mutate(dist_bin = factor(dist_bin, levels = bin_levels)) |>
+  transmute(`Stated purpose` = pressure_class, `Distance band` = dist_bin,
+            Measurements = n, `% of that purpose` = pct_of_class) |>
+  arrange(`Stated purpose`, `Distance band`) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+**80% of the aquaculture-monitoring measurements fall within 1 km of a fish farm and
+95.7% within 5 km, with 0.3% beyond 20 km. Every one of the 64 reference-condition
+measurements is beyond 20 km.** Two independent things, a Norwegian programme code and a
+great-circle distance to a licence coordinate, agree about which samples are near a farm.
+That is the strongest evidence on this page that the axis is sound.
+
+The same table shows the far-band problem from the other side: 40.9% of the stated
+**pressure** measurements also sit beyond 20 km, which is what the cleaned background
+removes.
+
+## What this page still does not fix
+
+Three things, in descending order of how much they matter.
+
+1. **Time.** Every sample is keyed to its nearest farm whether or not that farm existed
+   when the sediment was sampled. The aquaculture reference carries licence start and end
+   years, so this is measurable, and [Pressure Controls](./pressure-controls.qmd) measures
+   it. That page is still computed on the old aquaculture axis, so its numbers and this
+   page's do not yet line up; the two should be read as a pair, not summed.
+2. **Geography.** The near band is fjord and the far band is largely open shelf, so the
+   comparison is two settings as much as two pressures. Matching within municipality is
+   the control, again on the Pressure Controls page.
+3. **Texture.** The near band is a median 32-41% mud depending on size band, and only
+   12-16% of near-cage subsamples have a mud measurement at all. The
+   [Grain-Size-Normalised](./background-gsnorm.qmd) page is the texture cross-check.
 
 ::: {.callout-note}
-This is Norway only, and "distance to a farm" is a coarse pressure measure (a distant but
-industrial site is not pristine; a near site in a well-flushed location may be clean). The
-> 20 km band is a practical low-pressure background, not a guaranteed pristine one. Read
-with the raw [Global Background](./background.qmd) and
-[Grain-Size-Normalised](./background-gsnorm.qmd) pages to triangulate, and with
-[Pressure Controls](./pressure-controls.qmd), which measures how much of each ratio is
-proximity to a farm and how much is the coastline the farms sit on.
+This is Norway only, and "distance to a farm" remains a coarse pressure measure (a distant
+but industrial site is not pristine, and a near site in a well-flushed location may be
+clean). The > 20 km cleaned band is a practical low-pressure background, not a guaranteed
+pristine one. Read with the raw [Global Background](./background.qmd), the
+[Grain-Size-Normalised](./background-gsnorm.qmd) page and
+[Geo-Accumulation Index](./background-igeo.qmd) to triangulate.
 :::
