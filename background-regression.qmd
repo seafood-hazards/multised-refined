@@ -175,10 +175,10 @@ it is a flatter line letting more samples under it.
 rprs |>
   filter(reliable, cat == "bulk", !is.na(pct_reg_line)) |>
   pivot_longer(c(pct_reg_line, pct_ef_median), names_to = "method", values_to = "pct") |>
-  mutate(aq_bin = factor(aq_bin, levels = bin_levels),
+  mutate(dist_bin = factor(dist_bin, levels = bin_levels),
          method = factor(method, levels = c("pct_ef_median", "pct_reg_line"),
                          labels = c("EF < 1", "regression line"))) |>
-  ggplot(aes(aq_bin, pct, group = method, colour = method)) +
+  ggplot(aes(dist_bin, pct, group = method, colour = method)) +
   geom_line(linewidth = 0.7) + geom_point(size = 2) +
   scale_colour_manual(values = c(`EF < 1` = BLUE, `regression line` = RED), name = NULL) +
   facet_wrap(~ symbol, nrow = 1) +

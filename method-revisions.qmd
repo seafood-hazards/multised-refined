@@ -65,7 +65,7 @@ basis |>
   transmute(Fraction, Basis = al_basis,
             `Used for EF` = ifelse(adopted, "yes", "no"),
             n, `% of fraction` = pct_of_frac,
-            `offshore rows` = n_offshore, `rows < 1 km from a farm` = n_aq_lt1km) |>
+            `offshore rows` = n_offshore, `rows < 1 km from a farm` = n_farm_lt1km) |>
   arrange(Fraction, desc(`Used for EF`), desc(n)) |>
   kable(format.args = list(big.mark = ","))
 ```
@@ -190,14 +190,33 @@ controls the database can apply.
 is keyed to its nearest farm whether or not that farm existed when the sediment was
 collected, and the aquaculture reference carries clearance and withdrawal years, so the
 alignment can be checked. And the far band is the national pool beyond 20 km, which sits a
-median 83 km offshore against 400 m for the near band, so the contrast is open shelf against
+median 72 km offshore against 400 m for the near band, so the contrast is open shelf against
 coast as much as far against near.
 
-**What moved.** Matched within a municipality, copper falls from 3.2 times to 1.04 and zinc
-from 1.8 to 0.85, and near sediment exceeds local far sediment in about half the
-municipalities either way. Restricted to samples contemporary with an operating farm,
-molybdenum falls from 13.5 times to 8.0 on 28 measurements, and selenium loses its near band
-entirely. What the controls cannot separate is a fjord-wide effect from no effect.
+**What moved.** Matched within a municipality, copper falls from 2.62 times to 1.60 and zinc
+from 1.09 to 1.04, and near sediment exceeds local far sediment in 70% of the municipalities
+for copper and 51% for zinc. What the controls cannot separate is a fjord-wide effect from no
+effect.
+
+## 6b. The pressure axis was aquaculture, and should have been the fish farm
+
+**Before.** The near band was every sample within 1 km of the nearest **aquaculture site of
+any kind**, and the far band was the raw > 20 km pool. Copper read 3.2 times, zinc 1.8,
+molybdenum 13.5.
+
+**Now.** The axis is `dist_to_fish_farm`. 84% of what the old axis added to the near band sat
+next to a **land-based** facility (smolt plants, lobster and prawn holding) and most of the
+rest next to blue mussel, none of which deposits feed or antifouling copper on the seabed at
+the licence coordinate. The far band is also cleaned of Vannmiljø stated-pressure monitoring,
+which was over half of it. Copper reads **2.62** times, zinc **1.09**, and molybdenum and
+selenium are **withdrawn**: they have 21 and 1 bulk measurements within 1 km of a sea cage.
+
+**Why it matters beyond the numbers.** The temporal control reversed. On the old link the
+licence dates came from the nearest aquaculture site, so a sample could be dated against a
+mussel raft while its chemistry was attributed to a cage that was not there, and the page
+reported that pre-farm sediment was *dirtier* than sediment sampled while the farm ran.
+Keyed to the nearest fish farm's own licence, the ordering is the expected one: copper P90
+34 mg/kg pre-farm, 68.3 while operating, 74.6 after closure.
 
 ## 7. A verdict needs a normaliser that works
 

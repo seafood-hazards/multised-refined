@@ -48,6 +48,7 @@ refined_mixture_hist.csv
 refined_mixture_meta.csv
 refined_pristine_summary.csv
 refined_pristine_coverage.csv
+refined_pristine_coverage_source.csv
 refined_pristine_validation.csv
 refined_pristine_meta.csv
 refined_dataset_dictionary.csv

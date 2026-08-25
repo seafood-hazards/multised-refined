@@ -85,8 +85,8 @@ igv |>
 ```
 
 Overall coverage goes from **9.8% to 97.2%**. The row that matters for EFSA's actual request
-is the near-farm one: within 1 km of a fish farm, EF classifies **0.4%** of measurements and
-Igeo classifies **99.4%**. The relationship inverts with distance, which is the same fact
+is the near-farm one: within 1 km of a fish farm, EF classifies **0.3%** of measurements and
+Igeo classifies **99.9%**. The relationship inverts with distance, which is the same fact
 seen from the other end: aluminium is measured in survey work far offshore and is largely
 absent from the monitoring programmes that sample beneath the cages.
 
@@ -189,23 +189,23 @@ score lower there.
 
 ## Does it track the pressure gradient?
 
-The background uses no aquaculture information, so distance to the nearest farm is an
+The background uses no aquaculture information, so distance to the nearest fish farm is an
 **evaluation** of the index, not an input to it.
 
 ```{r}
 #| label: pressure-fig
-#| fig-cap: "Median Igeo by distance to the nearest aquaculture site, bulk fraction. The four elements split: copper and zinc peak at 5 to 20 km, while cobalt and manganese are highest under the cages. Only copper and zinc fall away sharply beyond 20 km."
+#| fig-cap: "Median Igeo by distance to the nearest fish farm, bulk fraction. Copper and zinc peak at 5 to 20 km rather than under the cages. Cobalt and manganese are cleanest under the cages, on 33 and 31 measurements."
 #| fig-width: 7.5
 #| fig-height: 3.4
 igp |>
   filter(cat == "bulk") |>
   mutate(symbol = factor(symbol, levels = elem_levels),
-         aq_band = factor(aq_band, levels = bin_levels)) |>
-  ggplot(aes(aq_band, igeo_p50, group = symbol, colour = symbol)) +
+         dist_bin = factor(dist_bin, levels = bin_levels)) |>
+  ggplot(aes(dist_bin, igeo_p50, group = symbol, colour = symbol)) +
   geom_hline(yintercept = 0, linewidth = 0.3, colour = "grey50") +
   geom_line(linewidth = 0.7) +
   geom_point(size = 2) +
-  labs(x = "distance to nearest aquaculture site", y = "median Igeo",
+  labs(x = "distance to nearest fish farm", y = "median Igeo",
        colour = NULL)
 ```
 
@@ -213,35 +213,43 @@ igp |>
 #| label: pressure-table
 igp |>
   mutate(symbol = factor(symbol, levels = elem_levels),
-         aq_band = factor(aq_band, levels = bin_levels)) |>
-  transmute(Element = symbol, Fraction = cat, Band = aq_band, n,
+         dist_bin = factor(dist_bin, levels = bin_levels)) |>
+  transmute(Element = symbol, Fraction = cat, Band = dist_bin, n,
             `median Igeo` = igeo_p50, `% class 0` = pct_unpolluted) |>
   arrange(Element, Fraction, Band) |>
   kable(format.args = list(big.mark = ","))
 ```
 
-One thing is consistent and one is not.
+**The index does not show a farm gradient, and that is a real result rather than a
+disappointment.** Copper and zinc peak at 5 to 20 km, not under the cages: copper rises from
+-0.15 under the cages to +0.56 in the middle ring, zinc from -0.84 to -0.17. Cobalt and
+manganese are at their *cleanest* under the cages, but on 33 and 31 measurements, which is
+barely over the threshold this site uses and not something to build on.
 
-**Consistent:** by class share, every element is cleanest in the far band. The share scoring
-class 0 beyond 20 km is the highest of the four bands for all of them, from 92.9% for cobalt
-down to 65.9% for manganese. That is the check that the index works at all, since the far
-band is where the background was cut from.
+The far band is not the cleanest band either. Beyond 20 km only cobalt has the highest class
+0 share (92.0%); copper, manganese and zinc are all cleaner under the cages than beyond
+20 km. The reason is visible on the [Pressure-Based
+Background](./background-pressure.qmd) page: the > 20 km band is over half Vannmiljø
+**stated-pressure** monitoring, contaminated seabed, industry and sewage, so it is a
+polluted band rather than a remote one. Igeo is measuring that faithfully.
 
-**Not consistent:** the medians do not agree about where the peak is. Copper and zinc peak in
-the middle, rising from -0.13 and -0.80 under the cages to +0.66 and +0.14 at 5 to 20 km
-before falling away beyond 20 km. Cobalt and manganese peak **under the cages** and decline
-outward, manganese most sharply, from +0.24 to -0.50.
+::: {.callout-note}
+This is why the tables here are binned but not cleaned. The Igeo background `B` is cut from
+the offshore (> 10 km from coast) population and owes nothing to these bands, so the bands
+are a **description of where the index lands**, not an estimate. The pressure page cleans its
+far band because it uses it as a background; this page does not, because it does not.
+:::
 
-So the gradient is real but it is **not monotonic**, and the two pairs of elements disagree
-about its shape. That is the honest finding rather than an inconvenience, and this page cannot
-resolve it. Two readings are available: the 1 to 20 km ring contains more of the fjord-head
-and harbour sediment that carries the region's other pressures, or the immediately-under-cage
-sediment is coarser and more organic, which moves concentration without moving contamination.
-Note also that the near bands are dominated by copper and zinc (13,066 and 11,854
-measurements under the cages, against 144 and 138 for cobalt and manganese), so the two elements that peak nearest
-the farms are also the two with the thinnest data there. The [Pressure-Based
-Background](./background-pressure.qmd) and [Pressure Controls](./pressure-controls.qmd) pages
-attack this directly.
+So the honest reading is that distance to a fish farm is a poor axis for Igeo at this
+resolution. What the index actually separates well is the coast from the open sea, which is
+the [Grain-Size-Normalised](./background-gsnorm.qmd) and [Background](./background.qmd)
+comparison, not this one. The near bands are also dominated by copper and zinc (11,472 and
+10,274 measurements under the cages, against 33 and 31 for cobalt and manganese), so three
+quarters of what this section describes is two elements. The
+[Pressure-Based Background](./background-pressure.qmd) and
+[Pressure Controls](./pressure-controls.qmd) pages attack the farm question directly, with a
+cleaned background and a matched design, and get a clear answer for copper where this page
+does not.
 
 ## What the index does not control
 

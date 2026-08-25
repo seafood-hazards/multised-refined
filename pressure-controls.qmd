@@ -7,10 +7,10 @@ subtitle: "What survives when the near-cage comparison is matched and time-align
 th { white-space: nowrap; }
 ```
 
-A near/far P90 ratio is read as near-cage enrichment: on the axis this page uses, copper
-3.2 times, zinc 1.8 times, molybdenum 13.5 times. That reading assumes the two bands differ
-only in pressure. They differ in two other ways that this database can measure, so this page
-measures them.
+The [Pressure-Based Background](./background-pressure.qmd) page reads a near/far P90 ratio as
+near-cage enrichment: copper 2.62 times, zinc 1.09 times. That reading assumes the two bands
+differ only in pressure. They differ in two other ways that this database can measure, so this
+page measures them.
 
 - **Time.** Every sample is keyed to its *nearest* farm, whether or not that farm existed
   when the sediment was collected. The aquaculture reference carries the clearance year and
@@ -25,23 +25,6 @@ Nothing here feeds a verdict. This page qualifies the pressure gradient the
 [Enrichment](./background-ef.qmd) pages use as their held-out yardstick, and the result is
 that the yardstick is softer than it looked.
 
-::: {.callout-warning
-title="This page is still computed on the old aquaculture axis"}
-The [Pressure-Based Background](./background-pressure.qmd) page was rebuilt in August 2026
-to measure distance to the nearest **fish farm**, and to take its background from a far
-band with the stated-pressure monitoring removed. The controls on this page still use
-distance to the nearest **aquaculture site of any kind**, which counts land-based smolt
-plants and mussel rafts as farms, and the raw far band.
-
-The reason is the temporal control: it needs to know *which* farm a sample is nearest to,
-so it can ask whether that farm was licensed when the sediment was sampled, and the only
-farm identity on `site` is the nearest aquaculture site rather than the nearest fish farm.
-The pipeline now records the fish farm's identity as well, but the databases have to be
-rebuilt before this page can use it.
-
-So read the ratios here as *how much each control removes*, which is the point of the
-page, and not as absolute enrichment. The absolute figures are on the rebuilt page.
-:::
 
 ```{r}
 #| label: setup
@@ -83,7 +66,7 @@ Bulk measurements within 1 km of a farm, placed in that farm's lifetime. The rul
 
 ```{r}
 #| label: period-fig
-#| fig-cap: "Where the near-cage bulk measurements fall in the lifetime of the farm they are keyed to. Only the middle band is evidence about farm pressure. Copper and zinc are mostly contemporary with an operating farm; molybdenum and cobalt are mostly not."
+#| fig-cap: "Where the near-cage bulk measurements fall in the lifetime of the fish farm they are keyed to. Only the middle band is evidence about farm pressure. Copper, zinc and cobalt are around 87% contemporary with an operating farm; molybdenum has 18 measurements in total and is not."
 #| fig-width: 8
 #| fig-height: 3
 share |>
@@ -111,27 +94,42 @@ near |>
   kable(format.args = list(big.mark = ","))
 ```
 
-For **copper** and **zinc** the alignment is good: `r op_pct("CU")`% and `r op_pct("ZN")`% of
-near-cage measurements were taken while the farm was operating. For **molybdenum** it is
-`r op_pct("MO")`%. Of the
-`r sum(near$n[near$symbol == "MO"])` bulk molybdenum measurements within 1 km of a farm that
-can be placed in that farm's lifetime,
-`r near$n[near$symbol == "MO" & near$period == "pre-farm"]` were taken before that site was
-cleared for aquaculture and `r near$n[near$symbol == "MO" & near$period == "post-closure"]`
-after it closed, leaving 28. **The 13.5 times molybdenum figure rests on
-`r near$n[near$symbol == "MO" & near$period == "operating"]` measurements that were actually
-contemporary with an operating farm**, which is below the 30-measurement threshold this site
-uses everywhere else. Cobalt is in the same position.
+**The alignment is good, and it was not before.** `r op_pct("CU")`% of near-cage copper
+measurements and `r op_pct("ZN")`% of near-cage zinc were taken while the farm was operating,
+and cobalt is at `r op_pct("CO")`%. **Molybdenum** has
+`r sum(near$n[near$symbol == "MO"])` bulk measurements within 1 km of a sea cage that can be
+placed in a farm's lifetime at all, of which
+`r near$n[near$symbol == "MO" & near$period == "operating"]` are contemporary with an
+operating one. It cannot be read.
 
-The pre-farm samples are not simply older. Their median years are 2002 to 2016, overlapping
-the operating ones, because clearance years run to 2026: a 2016 sample sits before a farm
-cleared in 2020. What they are is **coastal baseline sampling**, and for copper and zinc
-their P90s are the highest of the three periods
-(`r near$p90[near$symbol == "CU" & near$period == "pre-farm"]` against
-`r near$p90[near$symbol == "CU" & near$period == "operating"]` mg/kg for copper). Sediment
-near a place that would later be cleared for a farm was more contaminated than sediment near
-an operating one. That is the reviewer's point made concrete: distance to the nearest farm is
-partly a marker of industrialised coastline, not of farm input.
+::: {.callout-important
+title="The pre-farm result reversed when the farm link was corrected"}
+This page used to report that near-cage sediment sampled **before** the farm existed was
+*more* contaminated than sediment sampled while it operated, and read that as evidence that
+distance to a farm is partly a marker of industrialised coastline rather than of farm input.
+
+That was an artefact. Until August 2026 the licence dates came from `aqua_id`, the nearest
+aquaculture site of any kind, so a sample could be dated against a mussel raft or a
+land-based smolt plant while its chemistry was attributed to a cage that was not there. The
+refined `site` table now carries `fish_farm_aqua_id`, the nearest **fish farm**, and the
+period each sample sits in is tested against that farm's own licence.
+
+On the corrected link the ordering is the one the pressure hypothesis predicts. For copper the
+pre-farm P90 is `r near$p90[near$symbol == "CU" & near$period == "pre-farm"]` mg/kg against
+`r near$p90[near$symbol == "CU" & near$period == "operating"]` while operating and
+`r near$p90[near$symbol == "CU" & near$period == "post-closure"]` after closure; for zinc
+`r near$p90[near$symbol == "ZN" & near$period == "pre-farm"]`,
+`r near$p90[near$symbol == "ZN" & near$period == "operating"]` and
+`r near$p90[near$symbol == "ZN" & near$period == "post-closure"]`. Sediment sampled before
+the cages arrived is the cleanest of the three periods, and sediment sampled after they left
+is the dirtiest, which is what a persistent deposit looks like.
+
+The pre-farm samples are not simply older: their median year is
+`r near$median_year[near$symbol == "CU" & near$period == "pre-farm"]` against
+`r near$median_year[near$symbol == "CU" & near$period == "operating"]` for the operating ones,
+overlapping, because clearance years run to 2026 and a 2019 sample can sit before a farm
+cleared in 2022.
+:::
 
 ## Is the comparison like for like?
 
@@ -149,21 +147,25 @@ cov |>
   kable(format.args = list(big.mark = ","))
 ```
 
-The national background band sits a median 83 km offshore and is 76% mud. The near-cage band
-sits 400 m from shore and is 32% mud. Any comparison between them is a comparison of the open
-shelf against the coast, and grain size runs the opposite way to the finding, since the muddier
-band is the one with the *lower* metal.
+The national background band sits a median 72 km offshore and is 77% mud. The near-cage band
+sits about 400 m from shore and is 34% mud. Any comparison between them is a comparison of the
+open shelf against the coast, and grain size runs the opposite way to the finding, since the
+muddier band is the one with the *lower* metal.
 
 Matching within a municipality removes the shelf-versus-coast contrast. The local far band
-(5 to 20 km from a farm, same municipality) sits even closer to shore than the near band, and
-is muddier than it, so if anything the matched comparison now understates a near-cage effect
-rather than inventing one.
+(5 to 20 km from a farm, same municipality) sits about as close to shore as the near band and
+is twice as muddy (70% against 34%), so if anything the matched comparison now understates a
+near-cage effect rather than inventing one.
+
+Both far bands here are the **cleaned** ones, with Vannmiljø stated-pressure monitoring
+removed, for the reason the [Pressure-Based Background](./background-pressure.qmd) page sets
+out: a band that is half contaminated-seabed monitoring is not a background.
 
 ## What survives
 
 ```{r}
 #| label: controls-fig
-#| fig-cap: "The near/far P90 ratio for each element under successive controls. The dashed line is no difference. Copper and zinc lose almost all of their apparent enrichment once the comparison is made inside one municipality; molybdenum has too few time-aligned measurements to match at all."
+#| fig-cap: "The near/far P90 ratio for each element under successive controls. The dashed line is no difference. Copper keeps a clear excess through every control; zinc has almost nothing to lose and ends at no difference."
 #| fig-width: 8
 #| fig-height: 3.6
 ctl |>
@@ -196,26 +198,34 @@ ctl |>
   kable(format.args = list(big.mark = ","))
 ```
 
-**Copper falls from 3.22 to 1.04, zinc from 1.81 to 0.85.** Matching on municipality removes
-essentially the whole apparent gradient for the two elements with enough data to test it.
-Restricting to time-aligned samples as well changes little further (copper 1.14, zinc 0.86).
-The per-municipality detail says the same thing without relying on a pooled statistic: near
-sediment exceeds local far sediment in `r ctl$pct_mun_gt1[ctl$symbol == "CU" & ctl$control == "municipality-matched"]`%
-of the `r ctl$n_mun[ctl$symbol == "CU" & ctl$control == "municipality-matched"]` municipalities
-that can be tested for copper and
+**Copper survives every control.** It starts at
+`r ctl$ratio_p90[ctl$symbol == "CU" & ctl$control == "published"]`, is unmoved by restricting
+to time-aligned samples (`r ctl$ratio_p90[ctl$symbol == "CU" & ctl$control == "operating only"]`),
+and settles at `r ctl$ratio_p90[ctl$symbol == "CU" & ctl$control == "municipality-matched"]`
+matched within municipality and
+`r ctl$ratio_p90[ctl$symbol == "CU" & ctl$control == "matched + operating"]` matched and
+time-aligned together. The per-municipality detail says the same without relying on a pooled
+statistic: near sediment exceeds local far sediment in
+`r ctl$pct_mun_gt1[ctl$symbol == "CU" & ctl$control == "municipality-matched"]`% of the
+`r ctl$n_mun[ctl$symbol == "CU" & ctl$control == "municipality-matched"]` municipalities that
+can be tested. That is not a coin flip, and it is the strongest result on this site for a
+near-cage effect.
+
+**Zinc has almost nothing to lose and loses it.** From
+`r ctl$ratio_p90[ctl$symbol == "ZN" & ctl$control == "published"]` published to
+`r ctl$ratio_p90[ctl$symbol == "ZN" & ctl$control == "matched + operating"]` fully controlled,
+with near sediment exceeding local far in
 `r ctl$pct_mun_gt1[ctl$symbol == "ZN" & ctl$control == "municipality-matched"]`% of the
-`r ctl$n_mun[ctl$symbol == "ZN" & ctl$control == "municipality-matched"]` for zinc. That is a
-coin flip.
+`r ctl$n_mun[ctl$symbol == "ZN" & ctl$control == "municipality-matched"]` municipalities. *That*
+is a coin flip. The median-based ratio is below 1
+(`r ctl$ratio_p50[ctl$symbol == "ZN" & ctl$control == "municipality-matched"]`), so the small
+excess that remains in the P90 sits in the tail rather than in the typical sample.
 
-**Molybdenum cannot be matched.** No municipality has ten near-cage and ten local-far
-molybdenum measurements, so the only control available is the time alignment, which takes the
-ratio from 13.5 to 8.0 on 28 measurements. The signal is still large and it is still the
-largest on the page; what it no longer has is a sample size this site would accept anywhere
-else.
-
-**Cobalt and manganese are unaffected**, because they had nothing to lose: 1.43 and 0.47
-published, 1.66 and 0.48 time-aligned. **Selenium has one time-aligned near-cage
-measurement** and drops out entirely.
+**Nothing else can be read.** Cobalt, manganese, molybdenum and selenium all fall below 30
+time-aligned near-cage measurements, and none can be matched within a municipality: no
+municipality has ten near-cage and ten local-far measurements of any of them. This is a
+sharper limit than it was on the old axis, and it is the correct one: those counts were being
+padded by samples that sat next to land-based facilities.
 
 ## What this does and does not mean
 
@@ -227,11 +237,16 @@ often with another farm just beyond 5 km, so a null result is consistent with a 
 effect as well as with no effect. Matching cannot separate those two, and no distance-based
 design on this data can.
 
-**It does mean the published ratio is an upper bound.** Between the national 3.2 times for
-copper and the matched 1.04 times, the honest reading is that the answer lies in that range
-and the data cannot narrow it further. The same holds for zinc between 1.81 and 0.85.
+**It does mean the published ratio is an upper bound.** Between the national
+`r ctl$ratio_p90[ctl$symbol == "CU" & ctl$control == "published"]` times for copper and the
+matched `r ctl$ratio_p90[ctl$symbol == "CU" & ctl$control == "municipality-matched"]` times,
+the honest reading is that the answer lies in that range and the data cannot narrow it
+further. For zinc the range is
+`r ctl$ratio_p90[ctl$symbol == "ZN" & ctl$control == "published"]` to
+`r ctl$ratio_p90[ctl$symbol == "ZN" & ctl$control == "matched + operating"]`, which is to say
+no effect worth quoting.
 
-**It weakens, without overturning, the enrichment finding.** The
+**It supports, rather than weakens, the enrichment finding for copper.** The
 [Enrichment Factor](./background-ef.qmd) page shows the same gradient after aluminium
 normalisation, which is a different control and an important one, and that gradient is not
 tested here because aluminium is reported for about 1% of near-cage samples, far too few to
@@ -242,10 +257,13 @@ full one.
 ::: {.callout-note}
 Three limits on this page itself.
 
-**The farm link is to the nearest farm, not to the farm that was there.** A sample classified
-`pre-farm` may sit near an older farm that has since been withdrawn and re-cleared under a
-different registration, or near a second farm slightly further away. The classification is
-correct about the specific site it is keyed to and approximate about the location's history.
+**The farm link is to the nearest fish farm, not to the farm that was there.** A sample
+classified `pre-farm` may sit near an older farm that has since been withdrawn and re-cleared
+under a different registration, or near a second farm slightly further away. The
+classification is correct about the specific farm it is keyed to and approximate about the
+location's history. It is keyed to a **fish** farm since August 2026; before that it was keyed
+to the nearest aquaculture site of any kind, which is what produced the reversed pre-farm
+result described above.
 
 **Municipality is a coarse matching unit.** Norwegian coastal municipalities span several
 fjord arms with different depths, sills and redox regimes. It controls for region and for

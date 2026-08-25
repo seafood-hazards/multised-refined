@@ -165,8 +165,8 @@ rp |>
   transmute(`Years sampled` = revisits, `sites` = n_sites,
             `median distance to coast, km` = median_dist_to_coast_km,
             `% more than 10 km offshore` = pct_offshore_gt10km,
-            `sites with a farm distance` = n_sites_with_aqua,
-            `median distance to farm, km` = median_dist_to_aqua_km,
+            `sites with a farm distance` = n_sites_with_farm,
+            `median distance to farm, km` = median_dist_to_farm_km,
             `% within 5 km of a farm` = pct_within_5km_of_farm) |>
   kable(format.args = list(big.mark = ","))
 ```
@@ -211,7 +211,7 @@ proxy for pristine (a site a few km out in a pressured fjord is not clean, and a
 site in a remote area may be), and the redox-sensitive elements show that a lower value is
 not always the more natural one. The 90th percentile is a conservative upper bound of the
 background, not a typical value. Later pages will add normalised backgrounds and pressure
-based definitions (distance to aquaculture, enrichment factors) to triangulate. Iodine and
+based definitions (distance to a fish farm, enrichment factors) to triangulate. Iodine and
 selenium have too few measurements for a reliable background, especially when sieved.
 
 These percentiles also describe **the samples we hold, not the seabed**. All five sources
