@@ -1,10 +1,36 @@
+```{r}
+#| echo: false
+#| output: false
+# Browser cache key, derived from the database's own bytes.
+#
+# It used to be the release tag:
+#     "multised-refined@v0.2.0"
+# That was wrong. The database is re-uploaded onto the EXISTING release rather
+# than tagged afresh, so the tag does not move when the file changes, and every
+# returning visitor went on serving the stale copy out of browser cache. That
+# surfaces as "no such column" the moment a rebuild adds one, which the August
+# 2026 rebuild did: extraction_class, accredited, frac_basis, pressure_class and
+# the fish-farm columns are all new. Hashing the file is exact by construction:
+# same bytes, same key; new bytes, new key.
+#
+# It also stays correct under DB_RELEASE, which pins an older release when
+# reproducing a build: the hash follows whichever file the pre-render step
+# actually fetched, where a tag-derived key would have to be remembered.
+ojs_define(
+  dbCacheKey = paste0(
+    "multised-refined@",
+    substr(unname(tools::md5sum("multised_refined.sqlite")), 1, 12)
+  )
+)
+```
+
 ```{ojs}
 //| output: false
 db = {
   const StratumSQLite = await window._stratumSQLite;
   return StratumSQLite.open(window._dbRefined, {
     sqlJsPath: window._sqljsBase,
-    cacheKey:  "multised-refined@v0.2.0",
+    cacheKey:  dbCacheKey,
   });
 }
 ```
