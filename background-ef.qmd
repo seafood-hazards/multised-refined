@@ -198,14 +198,14 @@ it is real. The median EF by distance to the nearest farm (bulk, Norway):
 
 ```{r}
 #| label: pressure-fig
-#| fig-cap: "Median EF by distance to aquaculture (bulk, log scale, dashed line = background), for the three groups whose normaliser predicts the metal. Copper and zinc stay enriched near the cages after grain-size normalisation; cobalt does not. Manganese, molybdenum and selenium are absent: aluminium does not predict them, so an EF gradient for them would not be a grain-size-controlled result."
+#| fig-cap: "Median EF by distance to the nearest fish farm (bulk, log scale, dashed line = background), for the three groups whose normaliser predicts the metal. Copper and zinc stay enriched near the cages after grain-size normalisation; cobalt does not. Manganese, molybdenum and selenium are absent: aluminium does not predict them, so an EF gradient for them would not be a grain-size-controlled result."
 #| fig-width: 8.5
 #| fig-height: 4.4
 efp |>
   filter(cat == "bulk", symbol %in% c("CO","CU","MN","MO","SE","ZN")) |>
   mutate(symbol = factor(symbol, levels = elem_levels),
-         aq_bin = factor(aq_bin, levels = bin_levels)) |>
-  ggplot(aes(aq_bin, ef_p50, group = symbol, colour = symbol)) +
+         dist_bin = factor(dist_bin, levels = bin_levels)) |>
+  ggplot(aes(dist_bin, ef_p50, group = symbol, colour = symbol)) +
   geom_hline(yintercept = 1, linetype = "dashed", colour = "grey60") +
   geom_line(linewidth = 0.7) +
   geom_point(size = 2) +
@@ -230,13 +230,14 @@ raw near-cage ratios are real observations and live on the
 [Pressure-Based Background](./background-pressure.qmd) page; what cannot be claimed for them
 is grain-size control. Manganese leaves the figure for the same reason.
 
-Two limits on what remains. The copper and zinc gradient on **raw** values does not survive a
-geographic control: matched within a municipality rather than against the open shelf, copper
-falls from 3.2 times to about 1.1 and zinc from 1.8 to about 0.9. This figure is the better
-controlled comparison, but it rests on the roughly 1% of near-cage samples that carry
-aluminium, far too few to match within a municipality in turn. So the aluminium-normalised
-gradient is at once the strongest evidence for a near-cage effect and the least representative
-subset of the data. See [Pressure Controls](./pressure-controls.qmd).
+Two limits on what remains. The copper and zinc gradients on **raw** values behave
+differently under a geographic control: matched within a municipality rather than against the
+open shelf, copper falls from 2.62 times to 1.60 and keeps a clear excess, while zinc goes
+from 1.09 to 1.04, which is nothing. This figure is the better controlled comparison, but it
+rests on the roughly 1% of near-cage samples that carry aluminium, far too few to match within
+a municipality in turn. So the aluminium-normalised gradient is at once the strongest evidence
+for a near-cage effect and the least representative subset of the data. See
+[Pressure Controls](./pressure-controls.qmd).
 
 ::: {.callout-note}
 EF depends on its background: here the local offshore median of metal / Al, a defensible

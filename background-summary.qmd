@@ -259,9 +259,10 @@ below the limit of quantification and were removed before these percentiles were
 survives is the detected tail. Had a value been issued it would have been the >20 km figure
 of about `r sig(master$p90_off20[master$symbol=="MO" & master$cat=="bulk"])` mg/kg, with the
 global P90 of `r sig(master$p90_global[master$symbol=="MO" & master$cat=="bulk"])` discarded
-as a percentile of coastal anoxic basins. Molybdenum's near-cage enrichment is a separate
-question and it survives, reduced: 13.5 times against the open shelf, 8.0 times once only
-samples contemporary with an operating farm are counted, on 28 measurements. See
+as a percentile of coastal anoxic basins. Molybdenum's near-cage enrichment used to be
+reported here as 13.5 times against the open shelf. It is **withdrawn**: measured to the
+nearest fish farm rather than to aquaculture of any kind, molybdenum has 21 bulk measurements
+within 1 km of a sea cage and 2 of them are contemporary with an operating farm. See
 [Pressure Controls](./pressure-controls.qmd) and the
 [Enrichment Summary](./enrichment-summary.qmd).
 
