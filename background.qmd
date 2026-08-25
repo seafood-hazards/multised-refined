@@ -24,7 +24,7 @@ Everything is on the **raw** value (mg/kg), split by fraction into **bulk**,
 outliers are dropped, but only extreme ones: a value is flagged only if it is both more
 than 4 MADs from its group median on a log scale **and** a full order of magnitude away
 from that median, which catches registration errors rather than trimming the tail. It
-removes 414 of 115,820 measurements, 0.36%. Grain-size-normalised backgrounds
+removes 414 of 115,811 measurements, 0.36%. Grain-size-normalised backgrounds
 (metal / Al, metal / Fe) are a later page.
 
 ```{r}
