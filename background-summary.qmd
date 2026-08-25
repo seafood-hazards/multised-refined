@@ -49,9 +49,12 @@ al <- gsp |>
   filter(basis == "al", subset == "global", reliable) |>
   select(symbol, cat, p90_al = p90)
 
-# the Norwegian far-from-farm band, where it has enough measurements
+# the Norwegian far-from-farm band, where it has enough measurements. The CLEANED
+# far band: the raw >20 km pool is over half stated-pressure monitoring (contaminated
+# seabed, industry, sewage), which is not a background. See the Pressure-Based
+# Background page.
 nor <- prs |>
-  transmute(symbol, cat, p90_nor = `>20km`, n_nor = `n_>20km`) |>
+  transmute(symbol, cat, p90_nor = p90_far_clean, n_nor = n_far_clean) |>
   mutate(p90_nor = if_else(!is.na(n_nor) & n_nor >= 30, p90_nor, NA_real_)) |>
   select(symbol, cat, p90_nor)
 
@@ -104,7 +107,7 @@ master |>
             `mixture threshold` = sig(threshold),
             `mixture fit` = blank(verdict),
             `metal/Al P90` = sig(p90_al, 3),
-            `Norway >20 km` = sig(p90_nor)) |>
+            `Norway >20 km (cleaned)` = sig(p90_nor)) |>
   kable(format.args = list(big.mark = ","), align = "llrrrrrlrr")
 ```
 
@@ -183,8 +186,10 @@ flagged: copper's P90 falls 34 to 23 mg/kg between the 10 and 20 km cutoffs, zin
 a background value.
 
 **The mixture threshold sits far below the spatial estimates for manganese.** Manganese in
-bulk spans 2.45 times and dropping the global P90 does not help at all, because the two
-extremes are its mixture threshold (493 mg/kg) and the Norwegian far band (1,210). Both are
+bulk spans `r round(master$spread_all[master$symbol=="MN" & master$cat=="bulk"], 2)` times and
+dropping the global P90 does not help at all, because the two extremes are its mixture
+threshold (`r sig(master$threshold[master$symbol=="MN" & master$cat=="bulk"])` mg/kg) and the
+Norwegian far band (`r sig(master$p90_nor[master$symbol=="MN" & master$cat=="bulk"])`). Both are
 defensible and they mean different things: the mixture finds the lower mode of a
 distribution, the far band is a place with no farm nearby. For a redox-mobile element that
 precipitates offshore, those need not coincide, and here they do not.

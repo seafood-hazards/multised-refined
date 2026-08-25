@@ -16,6 +16,11 @@ refined_gsnorm_meta.csv
 refined_pressure_percentiles.csv
 refined_pressure_compare.csv
 refined_pressure_meta.csv
+refined_pressure_axis.csv
+refined_pressure_axis_dropped.csv
+refined_pressure_size.csv
+refined_pressure_size_covariates.csv
+refined_pressure_stated.csv
 refined_temporal_alignment.csv
 refined_pressure_controls.csv
 refined_matched_municipality.csv
