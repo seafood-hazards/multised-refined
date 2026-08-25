@@ -83,7 +83,15 @@ csvs <- c("refined_background_percentiles.csv",
           "refined_pristine_coverage.csv",
           "refined_pristine_validation.csv",
           "refined_pristine_meta.csv",
-          "refined_dataset_dictionary.csv")
+          "refined_dataset_dictionary.csv",
+          "refined_igeo_background.csv",
+          "refined_igeo_dist.csv",
+          "refined_igeo_classes.csv",
+          "refined_igeo_coverage.csv",
+          "refined_igeo_pressure.csv",
+          "refined_igeo_confound.csv",
+          "refined_igeo_toc_normaliser.csv",
+          "refined_igeo_meta.csv")
 
 for (f in csvs) {
   dest <- file.path(csv_dir, f)

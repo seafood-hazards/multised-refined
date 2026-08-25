@@ -1,0 +1,326 @@
+---
+title: "Geo-Accumulation Index"
+subtitle: "The index that reaches the samples the enrichment factor cannot"
+---
+
+```{css, echo=FALSE}
+th { white-space: nowrap; }
+```
+
+The [Enrichment Factor](./background-ef.qmd) page classifies a sample by dividing by
+aluminium. This one classifies it by dividing by the background concentration of the same
+element:
+
+$$I_\text{geo} = \log_2\!\left(\frac{C}{1.5 \times B}\right)$$
+
+The difference is not cosmetic. EF needs a **normaliser**, Igeo needs a **background**. A
+sample can only get an EF if it also carries aluminium, on the right measurement basis, for
+an element aluminium actually predicts. It gets an Igeo if it carries a value at all.
+
+That gap is the whole reason this page exists. EFSA asked for aquaculture monitoring data by
+name, and it is the one request this pipeline answered with silence: Vannmiljo's MOMC
+programme carries aluminium on **5 of 13,996** subsamples, so almost nothing near a fish
+farm gets an enrichment factor. EFSA also names the way out, in the same paragraph that sets
+the EF preference: the geo-accumulation index and the pollution load index "can be considered
+as well in absence of EF".
+
+::: {.callout-important}
+## This page issues no verdict, on purpose
+
+Igeo is reported **alongside** the pristine verdicts, not folded into them. The verdicts stay
+on EF.
+
+Reach is the argument for promoting it. The texture confounding measured further down is the
+argument against, and in bulk it is strong enough (cobalt correlates with the mud fraction at
+rho 0.70) that a verdict built on Igeo would be partly a verdict about grain size.
+
+Reporting the index without promoting it keeps the coverage visible to EFSA, who asked for
+Igeo precisely where EF is absent, without quietly changing what "pristine" means here.
+:::
+
+```{r}
+#| label: setup
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+bdir <- "data/refined_summary"
+rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
+                           check.names = FALSE)
+igb <- rd("refined_igeo_background.csv")
+igd <- rd("refined_igeo_dist.csv")
+igc <- rd("refined_igeo_classes.csv")
+igv <- rd("refined_igeo_coverage.csv")
+igp <- rd("refined_igeo_pressure.csv")
+igf <- rd("refined_igeo_confound.csv")
+igt <- rd("refined_igeo_toc_normaliser.csv")
+
+elem_levels  <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
+bin_levels   <- c("<1km", "1-5km", "5-20km", ">20km")
+class_levels <- c("0 unpolluted", "1 unpolluted-moderate", "2 moderate",
+                  "3 moderate-heavy", "4 heavy", "5 heavy-extreme", "6 extreme")
+class_cols <- c("0 unpolluted"          = "#228833",
+                "1 unpolluted-moderate" = "#66CCEE",
+                "2 moderate"            = "#CCBB44",
+                "3 moderate-heavy"      = "#EE7733",
+                "4 heavy"               = "#EE6677",
+                "5 heavy-extreme"       = "#AA3377",
+                "6 extreme"             = "#882255")
+theme_set(theme_minimal(base_size = 12))
+```
+
+## What it buys
+
+The point of the index, in one table: the share of rows that get a verdict under each
+instrument, overall and split by fraction and by distance to the nearest aquaculture site.
+
+```{r}
+#| label: coverage-table
+igv |>
+  transmute(Axis = axis, Band = band, n,
+            `n EF` = n_ef, `% EF` = pct_ef,
+            `n Igeo` = n_igeo, `% Igeo` = pct_igeo) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Overall coverage goes from **9.8% to 97.2%**. The row that matters for EFSA's actual request
+is the near-farm one: within 1 km of a fish farm, EF classifies **0.4%** of measurements and
+Igeo classifies **99.4%**. The relationship inverts with distance, which is the same fact
+seen from the other end: aluminium is measured in survey work far offshore and is largely
+absent from the monitoring programmes that sample beneath the cages.
+
+The sieved fractions gain almost as much. EF classifies **none** of them, because aluminium
+fails the normalisability test in every sieved group; Igeo classifies 93.8 and 97.8%.
+
+## The reference
+
+B is the offshore (more than 10 km from the coast) **median** of the raw concentration, per
+element and fraction. It is the same population the EF reference is cut from, so the two
+indices disagree about method rather than about which samples count as background.
+
+```{r}
+#| label: background-table
+withheld_el <- c("MO", "SE")
+igb |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Element = symbol, Fraction = cat, `n offshore` = n_bg,
+            `B (median, mg/kg)` = signif(bg_median, 4),
+            `P90 (mg/kg)` = signif(bg_p90, 4),
+            Index = case_when(
+              as.character(symbol) %in% withheld_el ~ "withheld (below LOQ)",
+              !reliable                             ~ "none (n < 30)",
+              TRUE                                  ~ "published")) |>
+  arrange(Element, Fraction) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Two choices in that table are worth stating, because both could reasonably have gone the
+other way.
+
+**The median, not the P90.** The 1.5 in the denominator is Muller's allowance for
+lithological variability about a *central* value; it is already doing the job a higher
+percentile would do. Using the P90 as B as well would apply the tolerance twice and make
+almost everything read as unpolluted. The P90 is published beside it so the spread stays
+visible.
+
+**Local, not crustal.** These are not Turekian and Wedepohl values. Their deep-sea clay
+figures run 9 to 24 times above this background for the clay-borne metals, and four orders of
+magnitude below it for iodine, so adopting them would have decided the answer before the data
+spoke. EFSA's guidance points the same way.
+
+The right-hand column says whether that reference is turned into an index, and there are two
+reasons it is not. Iodine has no usable reference at all: 5 offshore rows in bulk and 5 in
+sieved63, well under the 30-row minimum. Selenium and molybdenum have perfectly good
+reference counts and are withheld anyway, for a reason that has nothing to do with the
+reference and is taken up at the foot of this page.
+
+## How much of the seabed is above background?
+
+```{r}
+#| label: class-fig
+#| fig-cap: "Igeo class shares, per element and fraction. Copper in bulk is the outlier: 47% of it sits above the local offshore background, and 5% reaches class 4 or higher. Every other group is dominated by class 0."
+#| fig-width: 9
+#| fig-height: 5.2
+igc |>
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         igeo_class = factor(igeo_class, levels = class_levels)) |>
+  ggplot(aes(pct, symbol, fill = igeo_class)) +
+  geom_col(width = 0.72) +
+  facet_wrap(~ cat, ncol = 1, scales = "free_y") +
+  scale_fill_manual(values = class_cols, drop = FALSE) +
+  labs(x = "% of measurements", y = NULL, fill = "Igeo class")
+```
+
+```{r}
+#| label: dist-table
+igd |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Element = symbol, Fraction = cat, n,
+            `median Igeo` = igeo_p50, `P90 Igeo` = igeo_p90,
+            `% class 0` = pct_unpolluted,
+            `% class 2+` = pct_moderate_up,
+            `% class 4+` = pct_heavy_up) |>
+  arrange(Element, Fraction) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Every group has a **negative median**, which is what a median-based background has to give:
+half the offshore population sits below its own median, and the 1.5 pushes the whole scale
+down by a further 0.58 on the log axis. Class 0 is therefore the expected place for a typical
+sample, and the interesting number in that table is the right-hand column.
+
+Copper in bulk is the standout: **23.4% at class 2 or above and 5.1% at class 4 or above**,
+against roughly 1% or less for everything else. Manganese and zinc in bulk are the next two,
+at 1.0% and 1.7% at class 4 or above. In the sieved fractions the tail nearly vanishes, with no
+group above 0.2% at class 4.
+
+::: {.callout-warning}
+## The class names are Muller's; the meaning is not
+
+Muller's scale is calibrated against **average shale**. B here is a local offshore median,
+which for these metals sits well below shale, so "moderate" on this page means about two and
+a half times the local offshore background, not two and a half times the crust.
+
+The boundaries are kept because they are the convention a reviewer will recognise. Do not
+read the labels across to a study that used a crustal reference: the same sediment would
+score lower there.
+:::
+
+## Does it track the pressure gradient?
+
+The background uses no aquaculture information, so distance to the nearest farm is an
+**evaluation** of the index, not an input to it.
+
+```{r}
+#| label: pressure-fig
+#| fig-cap: "Median Igeo by distance to the nearest aquaculture site, bulk fraction. The four elements split: copper and zinc peak at 5 to 20 km, while cobalt and manganese are highest under the cages. Only copper and zinc fall away sharply beyond 20 km."
+#| fig-width: 7.5
+#| fig-height: 3.4
+igp |>
+  filter(cat == "bulk") |>
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         aq_band = factor(aq_band, levels = bin_levels)) |>
+  ggplot(aes(aq_band, igeo_p50, group = symbol, colour = symbol)) +
+  geom_hline(yintercept = 0, linewidth = 0.3, colour = "grey50") +
+  geom_line(linewidth = 0.7) +
+  geom_point(size = 2) +
+  labs(x = "distance to nearest aquaculture site", y = "median Igeo",
+       colour = NULL)
+```
+
+```{r}
+#| label: pressure-table
+igp |>
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         aq_band = factor(aq_band, levels = bin_levels)) |>
+  transmute(Element = symbol, Fraction = cat, Band = aq_band, n,
+            `median Igeo` = igeo_p50, `% class 0` = pct_unpolluted) |>
+  arrange(Element, Fraction, Band) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+One thing is consistent and one is not.
+
+**Consistent:** by class share, every element is cleanest in the far band. The share scoring
+class 0 beyond 20 km is the highest of the four bands for all of them, from 92.9% for cobalt
+down to 65.9% for manganese. That is the check that the index works at all, since the far
+band is where the background was cut from.
+
+**Not consistent:** the medians do not agree about where the peak is. Copper and zinc peak in
+the middle, rising from -0.13 and -0.80 under the cages to +0.66 and +0.14 at 5 to 20 km
+before falling away beyond 20 km. Cobalt and manganese peak **under the cages** and decline
+outward, manganese most sharply, from +0.24 to -0.50.
+
+So the gradient is real but it is **not monotonic**, and the two pairs of elements disagree
+about its shape. That is the honest finding rather than an inconvenience, and this page cannot
+resolve it. Two readings are available: the 1 to 20 km ring contains more of the fjord-head
+and harbour sediment that carries the region's other pressures, or the immediately-under-cage
+sediment is coarser and more organic, which moves concentration without moving contamination.
+Note also that the near bands are dominated by copper and zinc (13,066 and 11,854
+measurements under the cages, against 144 and 138 for cobalt and manganese), so the two elements that peak nearest
+the farms are also the two with the thinnest data there. The [Pressure-Based
+Background](./background-pressure.qmd) and [Pressure Controls](./pressure-controls.qmd) pages
+attack this directly.
+
+## What the index does not control
+
+Igeo divides by a background, not by a grain-size carrier, so nothing in it separates
+"muddy" from "polluted". Measured against the mud fraction, per group, alongside EF on the
+rows that carry one:
+
+```{r}
+#| label: confound-table
+igf |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Element = symbol, Fraction = cat,
+            `n Igeo` = n, `rho Igeo vs fines` = rho_igeo_fines,
+            `n EF` = n_ef, `rho EF vs fines` = rho_ef_fines) |>
+  arrange(Element, Fraction) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+In bulk, Igeo tracks the mud fraction for every metal, worst for **cobalt at rho 0.70**. In
+the sieved fractions it barely does, which is the normalisability finding from the other
+side: a sieved sample is already grain-size controlled, so there is little texture left for
+the index to pick up.
+
+**EF is not uniformly the better instrument.** On the same rows it beats Igeo for cobalt
+(0.24 against 0.70) and it **loses** for copper (0.55 against 0.36), tying for zinc. Dividing
+by aluminium demonstrably removes the texture signal for cobalt and demonstrably does not for
+copper. The comparison is between different row populations, since EF only exists where
+aluminium does, so read it as a scale rather than a like-for-like test.
+
+The case for Igeo is therefore strongest exactly where EF cannot run at all, in the sieved
+fractions and the near-farm data, and a bulk Igeo should be read with the texture caveat
+attached.
+
+## The alternative that does not work
+
+If the problem is a missing normaliser, the obvious question is whether another one is
+present. Organic carbon is: 33.1% of bulk target rows carry TOC and no aluminium, 28,397
+measurements, and metals do sorb to organic matter. Put through the same two-part test
+aluminium had to pass (R² at least 0.30 **and** rho at least 0.50):
+
+```{r}
+#| label: toc-table
+igt |>
+  filter(!is.na(r2) | !is.na(rho)) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Element = symbol, Fraction = cat,
+            `n offshore` = n_off, `R2` = r2, rho,
+            Normalisable = ifelse(normalisable_toc, "yes", "no")) |>
+  arrange(Element, Fraction) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+It clears both limits in exactly **one group of twenty**, and that group cannot be used:
+selenium sieved63, on 34 offshore rows, for an element whose verdicts are already withheld
+because below-LOQ censoring deleted 68.6% of it. A strong fit to the top third of a truncated
+distribution is not evidence about background.
+
+Everywhere it could matter it fails, and it fails in the way that is hardest to argue with:
+**the two measures disagree**. Copper is the best case in bulk, rho 0.60 against R² 0.21, and
+copper sieved63 inverts it, R² 0.37 against rho 0.32. For aluminium the two measures agreed
+on every group, which is what made the normalisability test a clean partition; for TOC they
+pull apart, so there is no cut that turns it into a normaliser. Those 28,397 rows stay
+unnormalised, and Igeo remains the only route to a verdict for them.
+
+## What Igeo does not fix
+
+**Selenium and molybdenum stay withheld.** They carry no index, no class and no verdict, so
+they are absent from every table on this page that reports one.
+
+Their offshore reference is still published in the reference table, and they still appear in
+the organic-carbon test, on the same principle the enrichment pages follow: what is withheld
+is the verdict, not the measurement or the background behind it.
+
+Their exclusion was never about normalisers. The clean stage removes below-LOQ rows, which
+deletes **68.6% of selenium and 52.2% of molybdenum**, so what survives is an upper tail
+wearing the name "background". Both ends of the ratio are truncated: the offshore median in
+the denominator is inflated, and the numerator holds only the measurements that cleared the
+limit. A different index over the same truncated distribution inherits the same problem.
+
+Normalisability, by contrast, does **not** apply here. That test asks whether aluminium
+predicts the metal, and nothing on this page divides by aluminium. Igeo escapes the
+normaliser constraint and not the censoring one.
