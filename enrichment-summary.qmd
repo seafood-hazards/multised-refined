@@ -63,7 +63,10 @@ grad <- efp |>
   mutate(ef_ratio = round(near_ef / far_ef, 2),
          evaluation = if_else(ef_ratio >= 1.5, "confirmed", "no signal"))
 
-near <- prs |> select(symbol, cat, enrich_near)
+# the cleaned near/far ratio: the raw >20 km band is over half stated-pressure
+# monitoring, so it is not a background. See the Pressure-Based Background page.
+near <- prs |> select(symbol, cat, enrich_near = enrich_near_clean,
+                      n_near = `n_<1km`)
 
 tbl <- ps |>
   filter(reliable | ((withheld | unnormalisable) & n >= pm$min_n)) |>
@@ -124,7 +127,7 @@ bulk |>
             `median EF (median ref)` = ef_p50,
             `median EF (P90 ref)` = ef_p50_p90ref,
             `P90 EF` = ef_p90,
-            `near/far P90 ratio` = enrich_near,
+            `near/far P90 ratio (cleaned bg)` = enrich_near,
             `nearest band` = near_band,
             `EF near/far` = ef_ratio,
             evaluation = evaluation) |>
@@ -152,17 +155,20 @@ the data are currently the same rows. [Pressure Controls](./pressure-controls.qm
 full accounting.
 
 **Molybdenum and selenium used to be reported here as the strongest confirmations, and that
-was wrong.** Their raw near/far P90 ratios are
-`r round(near$enrich_near[near$symbol == "MO" & near$cat == "bulk"], 1)` and
-`r round(near$enrich_near[near$symbol == "SE" & near$cat == "bulk"], 1)` times, still the
-largest anywhere on this site, and those are real observations of raw concentration. What was
-claimed on top of them was that the enrichment **survived grain-size normalisation**. It did,
-but only because the normalisation did nothing: aluminium is uncorrelated with molybdenum
-(Spearman's rho 0.00) and nearly so with selenium (0.15). A signal cannot survive a test that
-was never applied. Their raw ratios belong to the
-[Pressure-Based Background](./background-pressure.qmd) page, where they are labelled for what
-they are, and are further qualified by [Pressure Controls](./pressure-controls.qmd): only 19%
-of the near-cage molybdenum measurements were taken while the farm was operating.
+was wrong three times over.** They were quoted at about 13x and about 5x, the largest ratios
+anywhere on this site. First, the enrichment was said to **survive grain-size
+normalisation**. It did, but only because the normalisation did nothing: aluminium is
+uncorrelated with molybdenum (Spearman's rho 0.00) and nearly so with selenium (0.15), and a
+signal cannot survive a test that was never applied. Second,
+[Pressure Controls](./pressure-controls.qmd) found that only 19% of the near-cage molybdenum
+measurements were taken while the farm was operating. Third, and fatally, the near band was
+measured to the nearest aquaculture site of any kind rather than to a fish farm. On the
+corrected axis there are
+`r near$n_near[near$symbol == "MO" & near$cat == "bulk"]` bulk molybdenum and
+`r near$n_near[near$symbol == "SE" & near$cat == "bulk"]` bulk selenium measurements within
+1 km of a sea cage, against a threshold of 30. **The two figures are withdrawn rather than
+restated**, and the [Pressure-Based Background](./background-pressure.qmd) page now reports
+both elements as having too little near-cage data to read.
 
 ## How much can be judged at all
 
@@ -278,7 +284,10 @@ place with the farms removed: it sits 83 km offshore against 400 m for the near 
 Correcting both takes copper from 3.2 to about 1.1 and zinc from 1.8 to about 0.9. What
 remains unseparated is a fjord-wide effect, because sediment 5 km from a farm in a Norwegian
 farming municipality is not unfarmed sediment. See
-[Pressure Controls](./pressure-controls.qmd).
+[Pressure Controls](./pressure-controls.qmd). Those four figures are on the **old
+aquaculture axis**, which that page still uses; the ratios in the table above are on the
+corrected fish-farm axis and against the cleaned background, so the two sets are not
+directly comparable until the controls are recomputed.
 
 **Two further limits carried from the analysis pages.** The
 [Enrichment Map](./enrichment-map.qmd) applies these thresholds to per-site averages, which
