@@ -63,6 +63,7 @@ rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
                            check.names = FALSE)
 summ <- rd("refined_pristine_summary.csv")
 cov  <- rd("refined_pristine_coverage.csv")
+covs <- rd("refined_pristine_coverage_source.csv")
 val  <- rd("refined_pristine_validation.csv")
 
 elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
@@ -118,34 +119,45 @@ ones least able to receive one.
 
 ```{r}
 #| label: coverage-fig
-#| fig-cap: "Percentage of samples that can be classified, by distance to the nearest farm. Under 1% of the samples within 1 km of a farm can be judged, against 84% beyond 20 km. The figure covers cobalt, copper and zinc in bulk, the only groups that carry a verdict, so it measures the aluminium gap alone."
+#| fig-cap: "Percentage of samples that can be classified, by distance to the nearest fish farm. The figure covers cobalt, copper and zinc in bulk, the only groups that carry a verdict, so it measures the aluminium gap alone."
 #| fig-width: 7.5
 #| fig-height: 2.8
 cov |>
-  filter(axis == "distance to aquaculture") |>
+  filter(axis == "distance to fish farm") |>
   mutate(band = factor(band, levels = c("<1km", "1-5km", "5-20km", ">20km"))) |>
   ggplot(aes(band, pct_classifiable)) +
   geom_col(fill = "#AA3377", width = 0.65) +
   geom_text(aes(label = paste0(pct_classifiable, "%")), vjust = -0.4, size = 3.2) +
   scale_y_continuous(limits = c(0, 100), expand = expansion(mult = c(0, 0.1))) +
-  labs(x = "distance to nearest aquaculture farm", y = "% classifiable")
+  labs(x = "distance to nearest fish farm", y = "% classifiable")
 ```
 
 That gradient is real, but it is **not a property of near-cage sampling**. Splitting the
 same measurements by data source shows coverage that does not depend on distance at all:
 
-| Distance band | Vannmiljø, % with Al | Mareano, % with Al | Vannmiljø share of band |
-|---------------|---------------------:|-------------------:|------------------------:|
-| < 1 km        | 1.4%                 | 100%               | 99.8%                   |
-| 1-5 km        | 3.7%                 | 99.9%              | 93.4%                   |
-| 5-20 km       | 1.4%                 | 100%               | 92.8%                   |
-| > 20 km       | 3.1%                 | 99.6%              | 8.3%                    |
+```{r}
+#| label: coverage-source-table
+covs |>
+  filter(source %in% c("Vannmiljø", "Mareano")) |>
+  mutate(band = factor(band, levels = c("<1km", "1-5km", "5-20km", ">20km"))) |>
+  tidyr::pivot_wider(id_cols = band, names_from = source,
+                     values_from = c(pct_classifiable, pct_of_band)) |>
+  transmute(`Distance band` = band,
+            `Vannmiljø, % classifiable` = `pct_classifiable_Vannmiljø`,
+            `Mareano, % classifiable` = pct_classifiable_Mareano,
+            `Vannmiljø share of band` = `pct_of_band_Vannmiljø`,
+            `Mareano share of band` = pct_of_band_Mareano) |>
+  arrange(`Distance band`) |>
+  kable()
+```
 
-Within Vannmiljø, aluminium is reported for 1 to 4% of measurements at **every** distance,
+Within Vannmiljø, aluminium is reported for under 4% of measurements at **every** distance,
 including beyond 20 km. Within Mareano it is reported for essentially all of them, including
 under 1 km. What changes across the bands is not sampling practice near cages, it is
-**which programme sampled there**: the < 1 km band is 99.8% Vannmiljø, the > 20 km band is
-85% Mareano.
+**which programme sampled there**: the < 1 km band is
+`r covs$pct_of_band[covs$band == "<1km" & covs$source == "Vannmiljø"]`% Vannmiljø, while
+beyond 20 km Mareano supplies
+`r covs$pct_of_band[covs$band == ">20km" & covs$source == "Mareano"]`% of the measurements.
 
 So the finding is sharper than "near-cage sediment cannot be assessed". It is that
 **Vannmiljø does not report aluminium, and Vannmiljø is the programme that samples around
@@ -167,6 +179,7 @@ band:
 ```{r}
 #| label: within-source-table
 vsrc <- rd("refined_pristine_validation_source.csv")
+vv <- val |> filter(axis == "distance to fish farm", rule == "ef")
 vsrc |>
   mutate(Band = factor(band, levels = c("<1km", "1-5km", "5-20km", ">20km"))) |>
   transmute(Source = source, Band, samples = n,
@@ -175,20 +188,34 @@ vsrc |>
   kable(format.args = list(big.mark = ","))
 ```
 
-Mareano rises from 6% pristine under 1 km to 49% beyond 20 km, and Vannmiljø from 0% to 14%
-across the three bands it spans. Both rise monotonically, so **the gradient is not an
-artefact of which programme sampled where**. Near-cage points still rest on few classifiable
+Mareano rises monotonically across the three bands it spans, from
+`r vsrc$pct_ef[vsrc$source == "Mareano" & vsrc$band == "1-5km"]`% pristine at 1 to 5 km to
+`r vsrc$pct_ef[vsrc$source == "Mareano" & vsrc$band == ">20km"]`% beyond 20 km. **Vannmiljø
+does not**: it climbs from `r vsrc$pct_ef[vsrc$source == "Vannmiljø" & vsrc$band == "<1km"]`%
+under 1 km to `r vsrc$pct_ef[vsrc$source == "Vannmiljø" & vsrc$band == "5-20km"]`% at 5 to
+20 km and then falls to `r vsrc$pct_ef[vsrc$source == "Vannmiljø" & vsrc$band == ">20km"]`%
+beyond 20 km, on `r vsrc$n[vsrc$source == "Vannmiljø" & vsrc$band == ">20km"]` classifiable
+samples.
+
+That reversal is not noise about sampling practice, it is the far band itself. Vannmiljø's
+beyond-20 km measurements are largely its contaminated-seabed, industry and sewage
+programmes, which is why the [Pressure-Based Background](./background-pressure.qmd) page
+removes them before using that band as a background. So the honest statement is narrower than
+it was: **within the survey programme that samples across the whole gradient the trend is
+clean and monotonic**, and the one source that reverses it does so because its own far band is
+a pressure programme rather than a remote one. Near-cage points still rest on few classifiable
 samples, so read the trend, not the wiggle.
 
 The gradient is **steeper** than it was before the verdicts were restricted to groups whose
-normaliser works: 2, 9, 22 and 49% across the four distance bands, against 15, 15, 28 and 49%
-when manganese and the sieved fractions were included. Removing groups whose EF was
-noise-division sharpened the held-out check rather than blunting it, which is the outcome a
-sound restriction should produce.
+normaliser works:
+`r paste(vv$pct_pristine[order(factor(vv$band, levels = c("<1km","1-5km","5-20km",">20km")))], collapse = ", ")`%
+across the four distance bands, against 15, 15, 28 and 49% when manganese and the sieved
+fractions were included. Removing groups whose EF was noise-division sharpened the held-out
+check rather than blunting it, which is the outcome a sound restriction should produce.
 
 ```{r}
 #| label: validation-fig
-#| fig-cap: "Percentage pristine among classifiable samples, by distance to aquaculture and to coast (EF rule). Pristine rises with distance from pressure; the table above shows the same rise holds within each source separately."
+#| fig-cap: "Percentage pristine among classifiable samples, by distance to the nearest fish farm and to coast (EF rule). Pristine rises with distance from pressure; the table above shows the same rise holds within each source separately."
 #| fig-width: 8.5
 #| fig-height: 3.4
 val |>
@@ -196,7 +223,7 @@ val |>
   mutate(band = factor(band, levels = c("<1km","1-5km","5-20km",">20km","1-10km","10-50km",">50km"))) |>
   ggplot(aes(band, pct_pristine, group = axis, colour = axis)) +
   geom_line(linewidth = 0.7) + geom_point(size = 2) +
-  scale_colour_manual(values = c("distance to aquaculture" = "#AA3377",
+  scale_colour_manual(values = c("distance to fish farm" = "#AA3377",
                                  "distance to coast" = BLUE), name = NULL) +
   facet_wrap(~ axis, scales = "free_x") +
   labs(x = NULL, y = "% pristine (classifiable)") +

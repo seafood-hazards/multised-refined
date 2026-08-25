@@ -309,11 +309,14 @@ Three things, in descending order of how much they matter.
 1. **Time.** Every sample is keyed to its nearest farm whether or not that farm existed
    when the sediment was sampled. The aquaculture reference carries licence start and end
    years, so this is measurable, and [Pressure Controls](./pressure-controls.qmd) measures
-   it. That page is still computed on the old aquaculture axis, so its numbers and this
-   page's do not yet line up; the two should be read as a pair, not summed.
-2. **Geography.** The near band is fjord and the far band is largely open shelf, so the
-   comparison is two settings as much as two pressures. Matching within municipality is
-   the control, again on the Pressure Controls page.
+   it on the same axis and the same cleaned background as this page. It barely bites:
+   87.8% of near-cage copper and 86.9% of near-cage zinc are contemporary with an
+   operating farm, and restricting to those moves copper from 2.62 to 2.66.
+2. **Geography.** The near band is fjord and the far band is largely open shelf (a median
+   72 km from the coast against 400 m), so the comparison is two settings as much as two
+   pressures. This is the control that bites: matching within municipality takes copper
+   from 2.62 to 1.60 and zinc from 1.09 to 1.04. Copper keeps a clear excess and zinc does
+   not. See [Pressure Controls](./pressure-controls.qmd).
 3. **Texture.** The near band is a median 32-41% mud depending on size band, and only
    12-16% of near-cage subsamples have a mud measurement at all. The
    [Grain-Size-Normalised](./background-gsnorm.qmd) page is the texture cross-check.

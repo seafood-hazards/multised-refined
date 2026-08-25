@@ -53,7 +53,7 @@ theme_set(theme_minimal(base_size = 12))
 # the held-out check: does the median EF rise toward the cages? Compare the nearest band
 # with enough measurements against the far band, on the same element and fraction.
 grad <- efp |>
-  mutate(band = factor(aq_bin, levels = bin_levels)) |>
+  mutate(band = factor(dist_bin, levels = bin_levels)) |>
   filter(n >= pm$min_n) |>
   group_by(symbol, cat) |>
   summarise(near_band = as.character(band[which.min(as.integer(band))]),
@@ -80,7 +80,7 @@ tbl <- ps |>
   arrange(symbol, cat)
 
 bulk <- tbl |> filter(cat == "bulk")
-covq <- cov |> filter(axis == "distance to aquaculture")
+covq <- cov |> filter(axis == "distance to fish farm")
 blank <- function(x) ifelse(is.na(x), "", as.character(x))
 cq <- function(b) covq$pct_classifiable[covq$band == b]
 ```
@@ -144,10 +144,10 @@ Copper (`r bulk$ef_ratio[bulk$symbol == "CU"]` times) and zinc
 cobalt does not. Three rows is the whole table, because three groups is the whole set that
 carries a verdict.
 
-On raw concentrations the same gradient does **not** survive a geographic control: matched
-within a Norwegian municipality, near-cage sediment carries 1.04 times the copper and 0.85
-times the zinc of sediment 5 km away, against 3.2 and 1.8 times when the comparison is against
-the open shelf. The aluminium-normalised gradient in the table above is a better-controlled
+On raw concentrations the two elements part company under a geographic control: matched
+within a Norwegian municipality, near-cage sediment carries 1.60 times the copper and 1.04
+times the zinc of sediment 5 km away, against 2.62 and 1.09 times when the comparison is
+against the open shelf. Copper keeps a clear excess through every control; zinc does not. The aluminium-normalised gradient in the table above is a better-controlled
 comparison and it still rises toward the cages, but it rests on the roughly 1% of near-cage
 samples that carry aluminium, far too few to match within a municipality. The honest position
 is that the strongest evidence for a near-cage effect and the least representative subset of
@@ -160,7 +160,7 @@ anywhere on this site. First, the enrichment was said to **survive grain-size
 normalisation**. It did, but only because the normalisation did nothing: aluminium is
 uncorrelated with molybdenum (Spearman's rho 0.00) and nearly so with selenium (0.15), and a
 signal cannot survive a test that was never applied. Second,
-[Pressure Controls](./pressure-controls.qmd) found that only 19% of the near-cage molybdenum
+[Pressure Controls](./pressure-controls.qmd) finds only 2 of the 18 near-cage molybdenum
 measurements were taken while the farm was operating. Third, and fatally, the near band was
 measured to the nearest aquaculture site of any kind rather than to a fish farm. On the
 corrected axis there are
@@ -276,18 +276,15 @@ compared against the wrong denominator. This is why the classifiable shares for 
 zinc in bulk are as low as `r min(bulk$pct_classifiable[bulk$symbol %in% c("CU","ZN")])`%.
 [Method Revisions](./method-revisions.qmd) has the before and after.
 
-**The yardstick is itself confounded, and now measurably so.** Distance to the nearest farm
-is not the pressure a sediment experienced: for copper and zinc about one bulk measurement in
-six within 1 km of a farm was taken outside that farm's operating window, and for molybdenum
-four in five were. Nor is the far band the same
-place with the farms removed: it sits 83 km offshore against 400 m for the near band.
-Correcting both takes copper from 3.2 to about 1.1 and zinc from 1.8 to about 0.9. What
-remains unseparated is a fjord-wide effect, because sediment 5 km from a farm in a Norwegian
-farming municipality is not unfarmed sediment. See
-[Pressure Controls](./pressure-controls.qmd). Those four figures are on the **old
-aquaculture axis**, which that page still uses; the ratios in the table above are on the
-corrected fish-farm axis and against the cleaned background, so the two sets are not
-directly comparable until the controls are recomputed.
+**The yardstick is itself confounded, and now measurably so.** The time confounder turned out
+to be small once the samples were keyed to the nearest *fish* farm rather than to any
+aquaculture site: 88% of near-cage copper and 87% of near-cage zinc are contemporary with an
+operating farm. The geographic one is not small. The far band is not the same place with the
+farms removed: it sits a median 72 km offshore against 400 m for the near band.
+Correcting both takes copper from 2.62 to 1.60 and zinc from 1.09 to 1.04. Copper keeps a
+clear excess through every control and zinc does not. What remains unseparated is a fjord-wide
+effect, because sediment 5 km from a farm in a Norwegian farming municipality is not unfarmed
+sediment. See [Pressure Controls](./pressure-controls.qmd).
 
 **Two further limits carried from the analysis pages.** The
 [Enrichment Map](./enrichment-map.qmd) applies these thresholds to per-site averages, which
