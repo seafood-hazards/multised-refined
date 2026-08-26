@@ -22,6 +22,11 @@ refined_pressure_axis.csv
 refined_pressure_axis_dropped.csv
 refined_pressure_size.csv
 refined_pressure_size_covariates.csv
+refined_pressure_size_depth.csv
+refined_pressure_size_depth_cost.csv
+refined_pressure_size_strata.csv
+refined_pressure_size_paired.csv
+refined_pressure_size_geography.csv
 refined_pressure_stated.csv
 refined_temporal_alignment.csv
 refined_pressure_controls.csv
