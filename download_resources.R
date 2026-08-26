@@ -43,61 +43,21 @@ release <- db_release
 csv_dir <- "data/refined_summary"
 dir.create(csv_dir, recursive = TRUE, showWarnings = FALSE)
 
-csvs <- c("refined_background_percentiles.csv",
-          "refined_background_compare.csv",
-          "refined_background_sitewise.csv",
-          "refined_repeat_pressure.csv",
-          "refined_background_meta.csv",
-          "refined_gsnorm_percentiles.csv",
-          "refined_gsnorm_compare.csv",
-          "refined_gsnorm_meta.csv",
-          "refined_pressure_percentiles.csv",
-          "refined_pressure_compare.csv",
-          "refined_pressure_meta.csv",
-          "refined_pressure_axis.csv",
-          "refined_pressure_axis_dropped.csv",
-          "refined_pressure_size.csv",
-          "refined_pressure_size_covariates.csv",
-          "refined_pressure_stated.csv",
-          "refined_temporal_alignment.csv",
-          "refined_pressure_controls.csv",
-          "refined_matched_municipality.csv",
-          "refined_control_covariates.csv",
-          "refined_pressure_controls_meta.csv",
-          "refined_regression_fits.csv",
-          "refined_regression_compare.csv",
-          "refined_regression_pressure.csv",
-          "refined_regression_bins.csv",
-          "refined_regression_meta.csv",
-          "refined_ef_background.csv",
-          "refined_ef_dist.csv",
-          "refined_ef_pressure.csv",
-          "refined_ef_source.csv",
-          "refined_ef_region.csv",
-          "refined_ef_basis.csv",
-          "refined_ef_basis_refs.csv",
-          "refined_censoring.csv",
-          "refined_method_changes.csv",
-          "refined_method_changes_meta.csv",
-          "refined_pristine_validation_source.csv",
-          "refined_ef_meta.csv",
-          "refined_mixture_components.csv",
-          "refined_mixture_hist.csv",
-          "refined_mixture_meta.csv",
-          "refined_pristine_summary.csv",
-          "refined_pristine_coverage.csv",
-          "refined_pristine_coverage_source.csv",
-          "refined_pristine_validation.csv",
-          "refined_pristine_meta.csv",
-          "refined_dataset_dictionary.csv",
-          "refined_igeo_background.csv",
-          "refined_igeo_dist.csv",
-          "refined_igeo_classes.csv",
-          "refined_igeo_coverage.csv",
-          "refined_igeo_pressure.csv",
-          "refined_igeo_confound.csv",
-          "refined_igeo_toc_normaliser.csv",
-          "refined_igeo_meta.csv")
+# The list of CSVs is NOT kept here. _scripts/release-assets.txt is the single
+# source of truth for what every release must carry, and publish-release.sh reads
+# the same file, so the uploader and the downloader cannot drift apart. They did
+# once: two new Igeo tables were added to the manifest and uploaded, and this
+# script still held its own hand-maintained copy of the list, so the render 404'd
+# on a file that was sitting on the release (2026-08-26).
+manifest <- "_scripts/release-assets.txt"
+if (!file.exists(manifest)) {
+  stop("missing ", manifest, ": run the pre-render from the repository root")
+}
+csvs <- readLines(manifest)
+csvs <- trimws(csvs)
+csvs <- csvs[nzchar(csvs) & !startsWith(csvs, "#")]
+csvs <- csvs[endsWith(csvs, ".csv")]
+if (!length(csvs)) stop("no CSV assets listed in ", manifest)
 
 for (f in csvs) {
   dest <- file.path(csv_dir, f)
