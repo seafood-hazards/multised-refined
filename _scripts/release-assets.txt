@@ -1,7 +1,9 @@
 # Assets every release must carry: the site downloads exactly these from
 # releases/latest/download/ at pre-render (see download_resources.R), and the
-# two Downloads pages link to the database and the flat dataset directly. Keep
-# the two lists in step; publish-release.sh reads this one.
+# two Downloads pages link to the database and the flat dataset directly. This
+# file is the single source of truth: publish-release.sh uploads what is listed
+# here, and download_resources.R fetches the .csv lines from it rather than
+# keeping its own copy, so the two cannot drift apart.
 
 multised_refined.sqlite
 multised_refined_dataset.tsv.gz
