@@ -51,6 +51,11 @@ ax   <- rd("refined_pressure_axis.csv")
 axd  <- rd("refined_pressure_axis_dropped.csv")
 sz   <- rd("refined_pressure_size.csv")
 szc  <- rd("refined_pressure_size_covariates.csv")
+szd  <- rd("refined_pressure_size_depth.csv")
+szdc <- rd("refined_pressure_size_depth_cost.csv")
+szs  <- rd("refined_pressure_size_strata.csv")
+szp  <- rd("refined_pressure_size_paired.csv")
+szg  <- rd("refined_pressure_size_geography.csv")
 st   <- rd("refined_pressure_stated.csv")
 
 elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
@@ -227,7 +232,7 @@ sz |>
 
 ```{r}
 #| label: size-fig
-#| fig-cap: "Near-cage enrichment by the licensed size of the nearest farm, bulk, cleaned far background. Both elements peak at medium and fall at large, which is the opposite of a dose-response."
+#| fig-cap: "Near-cage enrichment by the licensed size of the nearest farm, bulk, cleaned far background. Both elements peak at medium and fall at large, which is the opposite of a dose-response. The section below shows that this ordering is geography rather than size."
 #| fig-width: 7
 #| fig-height: 3.6
 sz |>
@@ -247,8 +252,8 @@ molybdenum fall under 30 measurements in every band. Both behave the same way: s
 medium are close, and **large is the lowest of the three**. Copper goes 2.91, 3.15, 2.13
 and zinc 1.11, 1.26, 0.95.
 
-That is the opposite of a dose-response, and the reason is almost certainly siting rather
-than chemistry:
+That is the opposite of a dose-response. The obvious suspect is siting rather than
+chemistry, because the size bands differ in more than size:
 
 ```{r}
 #| label: size-cov-table
@@ -264,15 +269,187 @@ szc |>
 ```
 
 Large and medium farms sit in roughly **twice the water depth** of small ones (107 m and
-121 m against 66 m) and further from shore. Norway licenses the big farms into deep,
-well-flushed water precisely because it disperses the load, so a bigger farm depositing
-more organic matter over a larger and better-flushed footprint can leave *less* under the
-licence coordinate. A flat or inverted size response is therefore not evidence that the
-pressure is absent, and this table is what the one above has to be read against.
+121 m against 66 m) and further from shore. That gives a ready explanation: Norway
+licenses the big farms into deep, well-flushed water precisely because it disperses the
+load, so a bigger farm depositing more organic matter over a larger and better-flushed
+footprint could leave *less* under the licence coordinate. A flat or inverted size
+response is therefore not by itself evidence that the pressure is absent, and this table
+is what the one above has to be read against.
 
-The honest reading: **size does not give a clean dose-response on this data, and the
-confounder is large enough to explain why.** Separating the two needs depth-matched
-comparison within a size band, which this page does not do.
+It is an explanation, though, not a finding, and it is the one tested below. It fails.
+
+The honest reading of the table above on its own: **size does not give a clean
+dose-response, and there is a confounder big enough to explain why.** The section that
+follows is the test of that explanation, and it does not survive it.
+
+## Separating size from where the farm was sited
+
+The claim to check is that large farms read cleanest because Norway licenses them into
+deep, well-flushed water. It is a testable claim: hold depth constant and the inversion
+should go away. It does not. Something else turns out to be doing the work.
+
+The comparison is built as a ladder, because each rung removes a different thing and the
+answer changes twice on the way up.
+
+| Rung | What it removes |
+|---|---|
+| `raw` | nothing: the near band exactly as the table above reports it |
+| `clean` | rows Vannmiljø filed as `pressure` monitoring |
+| `depth` | every band cut to a common 50-150 m window |
+| `depth+texture` | a 20-80% mud window on top |
+
+### Cleaning first, because the bands are not charged equally
+
+Stated-pressure rows are not spread evenly across the size bands. The small-farm near
+band is **13.8%** contaminated-seabed, industry and sewage monitoring; the large-farm
+near band is **1.3%**. Raw, the small band is being charged for harbour sediment that
+happens to sit within a kilometre of a small farm.
+
+```{r}
+#| label: size-cost-table
+szdc |>
+  mutate(band = factor(band, levels = band_levels)) |>
+  transmute(`Size band` = band, `Rows, raw` = n_raw,
+            `% stated pressure` = pct_stated,
+            `Median depth, m` = depth_p50_raw,
+            `Rows, cleaned` = n_clean, `Rows, depth-matched` = n_depth,
+            `% kept` = pct_kept_depth,
+            `Rows, + texture` = n_texture) |>
+  arrange(`Size band`) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+### The ladder
+
+```{r}
+#| label: size-ladder-table
+szd |>
+  filter(cat == "bulk", symbol %in% c("CU", "ZN"), reliable) |>
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         band = factor(band, levels = band_levels),
+         tier = factor(tier, levels = c("raw", "clean", "depth",
+                                        "depth+texture"))) |>
+  transmute(Control = tier, Element = symbol, `Size band` = band, n = n,
+            `Median depth, m` = depth_p50, `Median mud, %` = fines_p50,
+            `P90 < 1 km` = p90, enrichment = enrich_clean) |>
+  arrange(Control, Element, `Size band`) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Matching depth works, in the sense that the three bands come out at a median of 84, 97
+and 95 m instead of 66, 123 and 110. It changes nothing about the ordering. Copper's
+near-cage P90 reads 65.1, 96.4 and 50.7 for small, medium and large, so **large is still
+the lowest of the three at the same depth**, and zinc behaves the same way. Adding the
+texture window pushes the same direction again, on numbers too small to lean on: the
+small band falls under 30 measurements and drops out of the table entirely.
+
+### It is not the window either
+
+A single window can always be accused of flattering one band. The same contrast read
+inside coarse depth strata gives the same answer at every depth:
+
+```{r}
+#| label: size-strata-fig
+#| fig-cap: "Bulk median concentration under the cages by depth stratum and licensed farm size, stated-pressure rows removed. Concentration climbs steeply with depth in every band (the muddier deep seabed holds more metal), and the large band sits at or below the others in every stratum."
+#| fig-width: 8.5
+#| fig-height: 4
+szs |>
+  filter(cat == "bulk", symbol %in% c("CU", "ZN"), reliable) |>
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         band = factor(band, levels = band_levels),
+         depth_band = factor(depth_band, levels = c("<50m", "50-100m",
+                                                    "100-150m", "150-250m",
+                                                    ">250m"))) |>
+  ggplot(aes(depth_band, p50, group = band, colour = band)) +
+  geom_line(linewidth = 0.7) +
+  geom_point(size = 2.4) +
+  facet_wrap(~ symbol, scales = "free_y") +
+  scale_colour_brewer(palette = "Set2", name = "farm size") +
+  labs(x = "water depth at the sample", y = "median concentration, mg/kg")
+```
+
+Two things are visible. Depth itself is a strong driver: copper roughly doubles and zinc
+roughly triples from the shallowest stratum to the deepest, which is the ordinary
+grain-size effect (deeper seabed here is muddier, and mud holds metal). And within every
+stratum the large band sits at or below the other two. **Depth is a real covariate and
+matching it was worth doing, but it is not the explanation for the size inversion.**
+
+### What is doing the work: the coast the farm is on
+
+The size bands are not samples of the same coastline.
+
+```{r}
+#| label: size-geo-table
+szg |>
+  filter(pct_of_band >= 1) |>
+  mutate(band = factor(band, levels = band_levels)) |>
+  transmute(`Size band` = band, Sea = sea_name, Sites = n,
+            `% of band` = pct_of_band) |>
+  arrange(`Size band`, desc(Sites)) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Large farms are overwhelmingly Norwegian Sea, and they are the only band with Barents Sea
+sites at all; small farms carry more than twice the North Sea share. Those coasts do not
+have the same sediment or the same industrial history, so a pooled comparison of size
+bands is partly a comparison of regions.
+
+### Pairing farms inside one municipality
+
+The fix is to never compare across regions: take one median per municipality and size
+band, form the ratio between two size bands **in the same municipality**, and summarise
+those ratios. The regional background then cancels by construction. `% above 1` is the
+sign test that goes with the ratio: near half is a null however the ratio itself reads.
+
+```{r}
+#| label: size-paired-table
+szp |>
+  filter(cat == "bulk", symbol %in% c("CU", "ZN")) |>
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         config = factor(config, levels = c("50-150m", "30-200m", "any depth"))) |>
+  transmute(`Depth window` = config, Element = symbol, Contrast = contrast,
+            Municipalities = n_muni, `Ratio P25` = ratio_p25,
+            `Ratio median` = ratio_p50, `Ratio P75` = ratio_p75,
+            `% above 1` = pct_above_1) |>
+  arrange(`Depth window`, Element, Contrast) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+The inversion is gone. Every contrast lands near 1 (the eighteen ratios span 0.83 to
+1.28), the direction flips between depth windows, and the share of municipalities falling
+each way hovers around half in almost every row. Copper says large farms are *higher*
+than small ones and *lower* than medium ones in the same breath, which is what a null
+looks like when it is forced to pick a sign.
+
+### What this does and does not say
+
+**It says the proxy fails.** Licensed MTB is not a usable stand-in for seabed metal load
+at the licence coordinate. The pooled size response reported above is mostly geography,
+some of it is stated-pressure monitoring landing unevenly on the small band, and none of
+it survives comparing farms to their own neighbours. Modelling pressure as
+size-weighted distance, which was the reason for carrying capacity onto `site` in the
+first place, is not supported by this data.
+
+**It does not say anything about the near-cage signal itself.** The near/far enrichment
+earlier on this page is untouched: it compares distance bands, not size bands. Copper is
+still about 2.5x under the cages against the cleaned far background, and that number
+never depended on farm size.
+
+Three reasons the proxy might fail even if capacity does drive deposition, none of which
+this data can separate: MTB is a licensed **ceiling** rather than the stock in the water
+when the sediment was sampled; a bigger farm spreads a bigger footprint, so the licence
+coordinate is not the same place relative to the cages for a 780 t farm and a 19,000 t
+one; and siting, feed conversion and fallowing practice all improve with operator scale.
+The honest summary is that **capacity does not predict what is under the cages**, not
+that capacity does not matter.
+
+::: {.callout-note title="The depth match was the test that was asked for, and it came back negative"}
+This page previously closed by saying that separating size from siting needed a
+depth-matched comparison, which was not built. It is built now, and depth turned out not
+to be the confounder that mattered: the inversion survives depth matching and survives
+depth stratification. Location was the confounder, and pairing farms within a
+municipality removes the size response entirely.
+:::
 
 ## The provider's own label agrees with the geometry
 
