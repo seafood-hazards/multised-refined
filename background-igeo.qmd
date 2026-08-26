@@ -55,6 +55,8 @@ igv <- rd("refined_igeo_coverage.csv")
 igp <- rd("refined_igeo_pressure.csv")
 igm <- rd("refined_igeo_pressure_matched.csv")
 igbc <- rd("refined_igeo_band_cost.csv")
+igpair  <- rd("refined_igeo_paired.csv")
+igreach <- rd("refined_igeo_pair_reach.csv")
 igf <- rd("refined_igeo_confound.csv")
 igt <- rd("refined_igeo_toc_normaliser.csv")
 
@@ -326,14 +328,91 @@ against 55.6% in the far band, and moving to the cleaned median shifts `B` by 8.
 0.11 of an Igeo unit. Cleaning it would also cut it from a different population than the EF
 reference, which is the one thing this step is built not to do.
 
+### Holding location fixed as well
+
+Cleaning and texture matching both act on **what** is in a band. Neither touches **where**
+the bands are. That gap matters, because the farm-size work on the [Pressure-Based
+Background](./background-pressure.qmd) page found location to be the confounder that bit
+hardest there: size bands that looked like a dose-response turned out to be reading out
+different coastlines, and pairing farms within a municipality flattened the response
+completely. The same question is owed here.
+
+The control is the same one: take one median per municipality and band, and compare two
+bands **inside the same municipality**, so the regional background cancels.
+
+**The controls do not stack, and that is the first result.** Requiring both bands in one
+municipality on top of the mud window leaves a single municipality for copper, because the
+texture match has already spent 97.3% of the near-cage rows. The headline near-against-far
+figure above cannot be location-checked directly, and this section does not pretend
+otherwise.
+
+```{r}
+#| label: igeo-pair-reach-table
+igreach |>
+  filter(cat == "bulk", symbol %in% c("CU", "ZN")) |>
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         dist_bin = factor(dist_bin, levels = bin_levels)) |>
+  transmute(Element = symbol, Band = dist_bin,
+            `Municipalities with a usable cell` = n_muni,
+            `Rows in them` = n) |>
+  arrange(Element, Band) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+**Paired against the > 20 km band without the texture match, the result just replays the
+texture confounder.** Copper comes out at -0.41, positive in under a third of the 22
+municipalities that can supply the pair. That reads like a reversal and it is not news:
+inside those pairs the near side is **57 percentage points sandier** (23.3% mud against
+80.8%). Pairing on location does nothing about grain size. The row is published so the trap
+is visible rather than stepped into twice.
+
+**The contrast that works is the adjacent one.** A near-cage site and a site a few
+kilometres away usually share a municipality, so < 1 km against 1-5 km pairs on **79**
+municipalities instead of 22, and the texture gap across it is 7.6 points rather than 57.
+
+```{r}
+#| label: igeo-paired-table
+igpair |>
+  filter(cat == "bulk", symbol %in% c("CU", "ZN")) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Pairs = pairs, Contrast = contrast, Element = symbol,
+            Municipalities = n_muni, `Igeo diff P25` = diff_p25,
+            `Igeo diff median` = diff_p50, `Igeo diff P75` = diff_p75,
+            `% positive` = pct_positive,
+            `Median mud gap, pp` = fines_gap_p50) |>
+  arrange(Pairs, Contrast, Element) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Copper is **+0.25 of an Igeo unit under the cages against the ring next door, in the same
+municipality, and positive in 72.2% of them**. The comparison is conservative in two
+independent ways: 1-5 km is not farm-free, so the contrast understates the true gradient,
+and the near side is still the sandier of the two, which suppresses the metal. Restricting
+to the pairs where the near side is *not* the sandier one is the `texture-balanced` block,
+and it does what removing a suppressor should do: copper rises to **+0.46 and 82.1%
+positive** on 28 municipalities.
+
+Zinc stays weak. It is -0.01 at 49.4% across all 77 pairs, which is a coin flip, and only
+reaches +0.08 at 60.7% when the texture-balanced pairs are taken. That is the fourth design
+on this site to put zinc near nothing.
+
 ### Reading it beside the other pages
 
 Copper is the only near-cage signal that survives every control on this site, and it now
-survives one more. The [Pressure-Based Background](./background-pressure.qmd) page puts
+survives two more. The [Pressure-Based Background](./background-pressure.qmd) page puts
 near-cage copper at 2.6 times the cleaned far background, and
 [Pressure Controls](./pressure-controls.qmd) brings that to 1.6 once the comparison is matched
-within a municipality; the texture-matched Igeo here says 1.8. Three different controls, three
-different row populations, one answer of the same size, and none of them needs aluminium.
+within a municipality; the texture-matched Igeo here says 1.8, and the municipality-paired
+Igeo above puts the near band 0.25 of a unit over the ring next door in 72% of municipalities.
+Four different controls, four different row populations, one answer, and none of them needs
+aluminium.
+
+The two Igeo controls are worth keeping apart, because they fail in opposite directions and
+neither can cover for the other. Texture matching holds grain size and lets location vary, on
+337 copper measurements. Municipality pairing holds location and lets grain size vary, on 79
+municipalities. They cannot be applied together (the intersection is one municipality), so
+copper's case rests on two controls that are each blind to what the other fixes, agreeing
+anyway.
 
 Zinc is where the pages disagree, and the disagreement is informative. Texture-matched Igeo
 shows zinc rising toward the cages by a factor of 1.4, while the municipality-matched
@@ -341,7 +420,8 @@ comparison on Pressure Controls puts it at 1.04 on what is effectively a coin fl
 control different things: one holds grain size and lets location vary, the other holds location
 and lets grain size vary. That zinc needs the texture control to show anything, and loses it to
 the location control, is the argument for reading its near-cage signal as sediment character
-rather than as farm input.
+rather than as farm input. The municipality pairing above says the same thing a third time:
+49.4% positive across 77 municipalities.
 
 ## What the index does not control
 
