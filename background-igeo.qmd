@@ -53,6 +53,8 @@ igd <- rd("refined_igeo_dist.csv")
 igc <- rd("refined_igeo_classes.csv")
 igv <- rd("refined_igeo_coverage.csv")
 igp <- rd("refined_igeo_pressure.csv")
+igm <- rd("refined_igeo_pressure_matched.csv")
+igbc <- rd("refined_igeo_band_cost.csv")
 igf <- rd("refined_igeo_confound.csv")
 igt <- rd("refined_igeo_toc_normaliser.csv")
 
@@ -192,13 +194,76 @@ score lower there.
 The background uses no aquaculture information, so distance to the nearest fish farm is an
 **evaluation** of the index, not an input to it.
 
+::: {.callout-important}
+## This section reported the opposite result, and the bands were at fault
+
+An earlier version of this page concluded that distance to a fish farm is a **poor axis** for
+Igeo: copper and zinc appeared to peak at 5 to 20 km rather than under the cages, and the
+band beyond 20 km read dirtier than the band under them. Both statements were true of the
+arithmetic and false of the seabed. The bands carried two confounders, neither of which has
+anything to do with fish farms, and the note that used to sit here argued the bands needed no
+cleaning because they only describe where the index lands. That is right about the numbers
+and wrong about the conclusion drawn from them: a band that is two fifths urban harbour
+cannot be read as "far from a farm" whatever it is being used for. With both confounders
+removed the far band is the cleanest band and copper shows a gradient. The raw columns are
+kept beside the corrected ones so the change is visible rather than silent.
+:::
+
+### The two confounders
+
+**Stated pressure.** Vannmiljø files why a sample was taken, and its `pressure` class is
+contaminated seabed, industry and sewage. That class makes up **55.6% of the copper and 54.3%
+of the zinc** beyond 20 km from a farm, against 3.5% of both under the cages. The far band was
+not remote, it was industrial, so the index was being asked to compare cages against harbours.
+This is the same cleaning the [Pressure-Based Background](./background-pressure.qmd) page
+applies, and it belongs here for the same reason.
+
+**Texture.** Igeo divides by a background, and this background is cut from offshore mud: `B`
+sits on sediment whose median fines content is **69.4%** for copper. The band under the cages
+is **38.1%** fines, the band beyond 20 km is **74.7%**. Roughly half the mud carries roughly
+half the metal, so near-cage sediment reads negative on grain size alone, before any farm
+enters the arithmetic. Section [What the index does not control](#what-the-index-does-not-control)
+measures that correlation directly; here it is removed by comparing like with like.
+
+### Cleaning the bands
+
 ```{r}
-#| label: pressure-fig
-#| fig-cap: "Median Igeo by distance to the nearest fish farm, bulk fraction. Copper and zinc peak at 5 to 20 km rather than under the cages. Cobalt and manganese are cleanest under the cages, on 33 and 31 measurements."
-#| fig-width: 7.5
-#| fig-height: 3.4
+#| label: pressure-table
 igp |>
   filter(cat == "bulk") |>
+  mutate(symbol = factor(symbol, levels = elem_levels),
+         dist_bin = factor(dist_bin, levels = bin_levels)) |>
+  transmute(Element = symbol, Band = dist_bin, n,
+            `median Igeo` = igeo_p50, `% class 0` = pct_unpolluted,
+            `% stated pressure` = pct_stated,
+            `n clean` = n_clean, `median Igeo, clean` = igeo_p50_clean,
+            `% class 0, clean` = pct_unpolluted_clean) |>
+  arrange(Element, Band) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Cleaning alone reverses the published finding. Copper beyond 20 km moves from a median Igeo of
+**+0.07 to -0.37**, and its class 0 share from **47.3% to 71.7%**, which puts it below the
+54.4% under the cages: the far band becomes the cleaner band rather than the dirtier one. Zinc
+does the same, 58.5% to **83.8%** class 0 against 74.7% under the cages. Cobalt and manganese
+barely move, because they were never the elements carrying the contaminated rows.
+
+Only copper and zinc have a near-cage band at all once cleaning is applied. Cobalt and
+manganese have 14 and 29 clean measurements under the cages, below the threshold this site
+reports, so everything that follows about the innermost band is about two elements.
+
+### Matching texture as well
+
+Restricting every band to sediment of comparable muddiness, and reporting the achieved median
+so the match can be checked rather than trusted:
+
+```{r}
+#| label: matched-fig
+#| fig-cap: "Median Igeo by distance to the nearest fish farm, bulk fraction, cleaned of stated-pressure rows and restricted to sediment that is 50 to 100% fines. Copper falls monotonically from the cages outward and is the only element above the class 0 boundary under them. Cobalt and manganese have no near-cage band that survives the match."
+#| fig-width: 7.5
+#| fig-height: 3.4
+igm |>
+  filter(cat == "bulk", window == "50-100%") |>
   mutate(symbol = factor(symbol, levels = elem_levels),
          dist_bin = factor(dist_bin, levels = bin_levels)) |>
   ggplot(aes(dist_bin, igeo_p50, group = symbol, colour = symbol)) +
@@ -210,46 +275,73 @@ igp |>
 ```
 
 ```{r}
-#| label: pressure-table
-igp |>
+#| label: matched-table
+igm |>
+  filter(cat == "bulk") |>
   mutate(symbol = factor(symbol, levels = elem_levels),
          dist_bin = factor(dist_bin, levels = bin_levels)) |>
-  transmute(Element = symbol, Fraction = cat, Band = dist_bin, n,
-            `median Igeo` = igeo_p50, `% class 0` = pct_unpolluted) |>
-  arrange(Element, Fraction, Band) |>
+  transmute(`Fines window` = window, Element = symbol, Band = dist_bin, n,
+            `median fines %` = fines_p50, `median Igeo` = igeo_p50,
+            `% class 0` = pct_unpolluted) |>
+  arrange(`Fines window`, Element, Band) |>
   kable(format.args = list(big.mark = ","))
 ```
 
-**The index does not show a farm gradient, and that is a real result rather than a
-disappointment.** Copper and zinc peak at 5 to 20 km, not under the cages: copper rises from
--0.15 under the cages to +0.56 in the middle ring, zinc from -0.84 to -0.17. Cobalt and
-manganese are at their *cleanest* under the cages, but on 33 and 31 measurements, which is
-barely over the threshold this site uses and not something to build on.
+**Copper now falls from the cages outward, and it is the only element that does.** Its median
+Igeo runs **+0.51** under the cages, +0.35 in both middle rings and **-0.35** beyond 20 km, a
+span of 0.86 of an Igeo unit, which is a factor of **1.8** in concentration. The class 0 share
+goes the same way, 30.3% under the cages against 76.4% beyond 20 km. Under the cages copper is
+the one element sitting above its local offshore background rather than below it.
 
-The far band is not the cleanest band either. Beyond 20 km only cobalt has the highest class
-0 share (92.0%); copper, manganese and zinc are all cleaner under the cages than beyond
-20 km. The reason is visible on the [Pressure-Based
-Background](./background-pressure.qmd) page: the > 20 km band is over half Vannmiljø
-**stated-pressure** monitoring, contaminated seabed, industry and sewage, so it is a
-polluted band rather than a remote one. Igeo is measuring that faithfully.
+The tighter 60 to 90% window gives the same answer on fewer rows, +0.47 against -0.39, so the
+gradient is not an artefact of where the window was cut. Zinc moves in the same direction but
+much less, +0.06 against -0.46 in the wide window and -0.12 against -0.49 in the tight one:
+its near-cage sediment straddles the class 0 boundary rather than crossing it.
 
-::: {.callout-note}
-This is why the tables here are binned but not cleaned. The Igeo background `B` is cut from
-the offshore (> 10 km from coast) population and owes nothing to these bands, so the bands
-are a **description of where the index lands**, not an estimate. The pressure page cleans its
-far band because it uses it as a background; this page does not, because it does not.
-:::
+### What the controls cost
 
-So the honest reading is that distance to a fish farm is a poor axis for Igeo at this
-resolution. What the index actually separates well is the coast from the open sea, which is
-the [Grain-Size-Normalised](./background-gsnorm.qmd) and [Background](./background.qmd)
-comparison, not this one. The near bands are also dominated by copper and zinc (11,472 and
-10,274 measurements under the cages, against 33 and 31 for cobalt and manganese), so three
-quarters of what this section describes is two elements. The
-[Pressure-Based Background](./background-pressure.qmd) and
-[Pressure Controls](./pressure-controls.qmd) pages attack the farm question directly, with a
-cleaned background and a matched design, and get a clear answer for copper where this page
-does not.
+```{r}
+#| label: band-cost-table
+igbc |>
+  filter(cat == "bulk") |>
+  mutate(dist_bin = factor(dist_bin, levels = bin_levels)) |>
+  transmute(Band = dist_bin, `n raw` = n_raw, `n clean` = n_clean,
+            `n matched` = n_matched, `median fines %, raw` = fines_p50_raw,
+            `% kept, clean` = pct_kept_clean, `% kept, matched` = pct_kept_matched) |>
+  arrange(Band) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+The texture match is expensive and it is expensive unevenly, which is the honest weakness of
+this section. Grain size is recorded on 43.9% of the rows beyond 20 km and **2.7%** of the rows
+under the cages, so the matched near-cage comparison rests on 337 copper and 236 zinc
+measurements out of more than 21,000. The match is also imperfect where it survives: even
+inside the 50 to 100% window the near-cage rows sit at 74.8% fines against 81.6% beyond 20 km,
+a residual that pushes copper's near-cage Igeo *down*, not up. The gradient is therefore a
+conservative reading of a small sample, not a precise one.
+
+`B` itself is left uncleaned, and the columns beside it on [The reference](#the-reference)
+are the reason it does not need to be. The offshore pool is 8.7% stated pressure for copper
+against 55.6% in the far band, and moving to the cleaned median shifts `B` by 8.3% at worst,
+0.11 of an Igeo unit. Cleaning it would also cut it from a different population than the EF
+reference, which is the one thing this step is built not to do.
+
+### Reading it beside the other pages
+
+Copper is the only near-cage signal that survives every control on this site, and it now
+survives one more. The [Pressure-Based Background](./background-pressure.qmd) page puts
+near-cage copper at 2.6 times the cleaned far background, and
+[Pressure Controls](./pressure-controls.qmd) brings that to 1.6 once the comparison is matched
+within a municipality; the texture-matched Igeo here says 1.8. Three different controls, three
+different row populations, one answer of the same size, and none of them needs aluminium.
+
+Zinc is where the pages disagree, and the disagreement is informative. Texture-matched Igeo
+shows zinc rising toward the cages by a factor of 1.4, while the municipality-matched
+comparison on Pressure Controls puts it at 1.04 on what is effectively a coin flip. The two
+control different things: one holds grain size and lets location vary, the other holds location
+and lets grain size vary. That zinc needs the texture control to show anything, and loses it to
+the location control, is the argument for reading its near-cage signal as sediment character
+rather than as farm input.
 
 ## What the index does not control
 
