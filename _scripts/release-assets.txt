@@ -68,6 +68,8 @@ refined_igeo_pressure_matched.csv
 refined_igeo_band_cost.csv
 refined_igeo_paired.csv
 refined_igeo_pair_reach.csv
+refined_igeo_within_site.csv
+refined_igeo_within_reach.csv
 refined_igeo_confound.csv
 refined_igeo_toc_normaliser.csv
 refined_igeo_meta.csv

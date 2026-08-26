@@ -57,6 +57,8 @@ igm <- rd("refined_igeo_pressure_matched.csv")
 igbc <- rd("refined_igeo_band_cost.csv")
 igpair  <- rd("refined_igeo_paired.csv")
 igreach <- rd("refined_igeo_pair_reach.csv")
+igws    <- rd("refined_igeo_within_site.csv")
+igwr    <- rd("refined_igeo_within_reach.csv")
 igf <- rd("refined_igeo_confound.csv")
 igt <- rd("refined_igeo_toc_normaliser.csv")
 
@@ -396,6 +398,106 @@ Zinc stays weak. It is -0.01 at 49.4% across all 77 pairs, which is a coin flip,
 reaches +0.08 at 60.7% when the texture-balanced pairs are taken. That is the fourth design
 on this site to put zinc near nothing.
 
+### The control that needs no matching: the same site, before its farm
+
+Every control above matches one population against another and pays for it. Texture
+matching spends 97.3% of the near-cage rows. Municipality pairing cannot be stacked on top
+of it. The adjacent contrast that survives both is blunted, because 1-5 km is not
+farm-free. All three are approximations of the one thing actually wanted: a farm-free
+reading of **the same seabed**.
+
+The database can supply that directly. `fish_farm_aqua_id` carries the farm's licence
+dates, so a site sampled before its farm opened and again while it was operating is its own
+control. That holds fixed what no matching reaches: the exact location, the water depth,
+the regional background, the sediment's provenance, and the sampling programme. It needs no
+grain-size measurement at all.
+
+```{r}
+#| label: igeo-within-reach-table
+igwr |>
+  filter(cat == "bulk", symbol %in% c("CU", "ZN")) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Element = symbol, `Near-cage sites` = n_sites_any,
+            `With a pre-farm sample` = n_sites_pre,
+            `Pre-farm rows` = n_rows_pre, `Operating rows` = n_rows_op,
+            `Median years before the farm opened` = lead_years_p50) |>
+  arrange(Element) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+The pre-farm rows are almost all MOM baseline surveys, taken a median of **one year** before
+the farm opens. This is a designed baseline, not an accident of the archive.
+
+**It needs a placebo**, because a before-and-after is a time series and metals in Norwegian
+sediment are not stationary. The same contrast is run in two rings further out, split on the
+**same farm's** start year, so any secular trend appears there with no farm depositing under
+the sampler. And the years-between-samples gap has to be matched: raw, the near-cage pairs
+sit 4 years apart and the 5-20 km pairs 10, so an unmatched comparison would charge the
+placebo with six extra years of drift.
+
+```{r}
+#| label: igeo-within-table
+igws |>
+  filter(cat == "bulk", symbol %in% c("CU", "ZN")) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Basis = basis, Element = symbol, Zone = zone, Sites = n_sites,
+            `Median gap, yr` = gap_p50, `Igeo change P25` = delta_p25,
+            `Igeo change median` = delta_p50, `Igeo change P75` = delta_p75,
+            `% rising` = pct_rising, `Igeo per year` = rate_p50) |>
+  arrange(Basis, Element, Zone) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+```{r}
+#| label: igeo-within-fig
+#| fig-cap: "Change in median Igeo at the same site between a pre-farm sample and one taken while the farm operated, by distance from the farm, gap matched to 2-7 years. Only the first ring has a farm above it; the others are placebos split on the same farm's start year. Sediment away from farms is getting cleaner, sediment under the cages is getting dirtier, and the turn happens at the cages."
+#| fig-width: 7.5
+#| fig-height: 3.8
+igws |>
+  filter(cat == "bulk", symbol %in% c("CU", "ZN"),
+         basis == unique(igws$basis)[1]) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  ggplot(aes(zone, delta_p50, group = symbol, colour = symbol)) +
+  geom_hline(yintercept = 0, linetype = 2, colour = "grey55") +
+  geom_line(linewidth = 0.7) +
+  geom_point(aes(size = n_sites)) +
+  scale_colour_brewer(palette = "Dark2", name = NULL) +
+  scale_size_continuous(range = c(2, 5.5), name = "sites") +
+  labs(x = "distance from the farm (only the first ring has one above it)",
+       y = "change in median Igeo, pre-farm to operating")
+```
+
+Under the cages, copper rises **+0.22 of an Igeo unit** and is rising at **69.4%** of the 72
+sites. In the 5-20 km placebo it falls **-1.05** and is rising at only 22.2%. The secular
+trend in this sediment is downward, which means every cross-sectional number on this page
+is measured against a background that is itself improving, and therefore understates the
+farm. Read as a rate over all pairs, the gradient is monotone: **+0.050** Igeo units per
+year under the cages, **-0.017** at 1-5 km, **-0.044** at 5-20 km.
+
+::: {.callout-important title="This is the one design where zinc is not null"}
+Zinc rises **+0.23** under the cages, at **70.8%** of 65 sites, against **-0.53** in the
+placebo. Four cross-sectional designs on this site have put zinc at or near zero, and this
+one does not.
+
+The two are not in conflict, and the reason is worth stating. Every other design compares
+**different places**, and zinc's variation between places is dominated by sediment
+character, which is large enough to swamp a farm signal. This design compares **one place
+with itself**, so between-place variation is removed entirely rather than matched away.
+Zinc being invisible across places and visible within them is what a modest, real effect
+sitting under a large nuisance variance looks like.
+
+It is still 65 sites, and it is the minority reading. The pristine classification and the
+exports are unchanged, and zinc keeps its withheld-verdict status until a design with more
+baseline sites agrees.
+:::
+
+**What this cannot separate**, and it changes the reading: a farm enriches sediment with
+organic matter, and organically enriched sediment is finer. Some of the rise measured here
+may be the seabed becoming muddier rather than the metal load increasing. That is mediation
+rather than confounding, since the farm caused both, but "the farm raised the metal" here
+includes "the farm changed the sediment". No site in the design has a grain-size measurement
+in both periods, so it cannot be checked on this data.
+
 ### Reading it beside the other pages
 
 Copper is the only near-cage signal that survives every control on this site, and it now
@@ -407,12 +509,16 @@ Igeo above puts the near band 0.25 of a unit over the ring next door in 72% of m
 Four different controls, four different row populations, one answer, and none of them needs
 aluminium.
 
-The two Igeo controls are worth keeping apart, because they fail in opposite directions and
-neither can cover for the other. Texture matching holds grain size and lets location vary, on
-337 copper measurements. Municipality pairing holds location and lets grain size vary, on 79
-municipalities. They cannot be applied together (the intersection is one municipality), so
-copper's case rests on two controls that are each blind to what the other fixes, agreeing
-anyway.
+The three Igeo controls are worth keeping apart, because they fail in different directions
+and none can cover for the others. Texture matching holds grain size and lets location vary,
+on 337 copper measurements. Municipality pairing holds location and lets grain size vary, on
+79 municipalities. The first two cannot be applied together, since their intersection is one
+municipality. The before-and-after design holds *everything* fixed by using one site as its
+own control, needs no grain size at all, and pays for it in a different currency: 80 sites,
+and an inability to separate metal input from the farm making the seabed muddier.
+
+Copper is above background on all three, on populations that barely overlap. That is the
+strongest statement this page can make, and it is stronger than any single control in it.
 
 Zinc is where the pages disagree, and the disagreement is informative. Texture-matched Igeo
 shows zinc rising toward the cages by a factor of 1.4, while the municipality-matched
@@ -420,8 +526,15 @@ comparison on Pressure Controls puts it at 1.04 on what is effectively a coin fl
 control different things: one holds grain size and lets location vary, the other holds location
 and lets grain size vary. That zinc needs the texture control to show anything, and loses it to
 the location control, is the argument for reading its near-cage signal as sediment character
-rather than as farm input. The municipality pairing above says the same thing a third time:
-49.4% positive across 77 municipalities.
+rather than as farm input. The municipality pairing says the same thing a third time: 49.4%
+positive across 77 municipalities.
+
+The before-and-after design is the one dissent, and it is a considered one rather than
+noise: zinc rises at 70.8% of 65 sites where the placebo falls. The reconciliation is that
+every design except that one compares different places, and zinc's between-place variation
+is big enough to hide a modest effect. Zinc is therefore best described as **unresolved**
+rather than absent, which is a change from what this page said before, and it is the
+strongest argument on the site for collecting more pre-farm baselines.
 
 ## What the index does not control
 
