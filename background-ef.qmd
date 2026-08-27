@@ -52,11 +52,23 @@ regression on the offshore reference, it does for **cobalt, copper and zinc in b
 (R² 0.46 to 0.58) and for nothing else: manganese, molybdenum and selenium in bulk, and every
 sieved fraction of every element, sit at 0.10 or below, two of them at or below zero.
 
-Those groups therefore carry **no enrichment factor and no pristine verdict**. Their
-concentrations, their offshore references and their distributions are still published; what
-is withheld is the verdict, on the same principle that already withholds one where the
-aluminium basis is wrong. [Regression Normalisation](./background-regression.qmd) has the
-measurements behind it.
+Those groups therefore carry **no enrichment factor**, and this page ends for them. What
+follows from that differs by fraction, and the distinction matters.
+
+For **manganese, molybdenum and selenium in bulk** the pristine verdict is withheld too:
+aluminium was the grain-size control on offer, it does not work, and nothing replaces it.
+
+For the **sieved fractions** nothing is withheld. A sieved sample was grain-size controlled
+by the sieve before the chemistry started, which is exactly why aluminium has nothing left
+to track in it, so the low R² here is that control working rather than failing. Those
+fractions are classified without an enrichment factor on the
+[Pristine Classification](./background-pristine.qmd) page. Reading their R² as a defect is
+the error this site made until August 2026; see
+[Method Revisions](./method-revisions.qmd).
+
+Concentrations, offshore references and distributions are published for every group either
+way. [Regression Normalisation](./background-regression.qmd) has the measurements behind
+this one.
 :::
 
 The background here uses **no aquaculture information**: it is the offshore distribution
@@ -125,7 +137,10 @@ efd |>
             `median EF` = blank(ef_p50), `P90 EF` = blank(ef_p90),
             `% adequate (EF<1)` = blank(pct_lt1),
             `% adequate (P90 ref)` = blank(pct_lt1_p90ref),
+            # a sieved row has no EF for a different reason from a bulk row, and only
+            # the bulk one is a withholding: see the callout above
             verdict = case_when(withheld ~ "withheld (below LOQ)",
+                                unnormalisable & cat != "bulk" ~ "no EF (sieve-controlled)",
                                 unnormalisable ~ "withheld (Al does not predict it)",
                                 TRUE ~ "")) |>
   arrange(Element, Fraction) |>

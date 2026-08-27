@@ -201,15 +201,22 @@ sieved fraction it explains essentially none. Those EF numbers are still compute
 published, and a reader is entitled to know that behind some of them is a division by a
 number that does not track the metal.
 
-**That decision has now been taken.** The same principle that withholds a verdict where the
-aluminium basis is wrong, and where most measurements fell below the limit of quantification,
-withholds one where aluminium does not predict the metal. A group is classified only where
-both measures clear their limit:
+**That decision has now been taken, for the bulk fraction.** The same principle that
+withholds a verdict where the aluminium basis is wrong, and where most measurements fell
+below the limit of quantification, withholds one where aluminium does not predict the metal.
+An enrichment factor exists only where both measures clear their limit:
 
 | Measure | Limit | Computed over |
 |---|---|---|
 | R² of metal on Al | >= 0.30 | the offshore reference, the rows the EF reference itself uses |
 | Spearman's rho | >= 0.50 | every on-basis row |
+
+The test governs **bulk only**, and the sieved rows below are a diagnostic rather than a
+judgement. Aluminium is the grain-size control only where the control has to be statistical;
+in a sieved sample it was applied physically, by the sieve, before the chemistry started.
+The near-zero R² on those rows is that physical control working, which is what leaves
+aluminium nothing to track, so it withholds nothing. Those fractions are classified without
+an enrichment factor on the [Pristine Classification](./background-pristine.qmd) page.
 
 The second exists to answer the obvious objection to the first. An R² on the offshore
 reference is attenuated by that reference's restricted range, so a low value there might mean

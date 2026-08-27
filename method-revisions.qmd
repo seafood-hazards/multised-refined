@@ -28,6 +28,8 @@ rd <- function(f) read.csv(file.path(bdir, f), stringsAsFactors = FALSE,
 ch    <- rd("refined_method_changes.csv")
 basis <- rd("refined_ef_basis.csv")
 cens  <- rd("refined_censoring.csv")
+summ  <- rd("refined_pristine_summary.csv")
+pref  <- rd("refined_pristine_reference.csv")
 vsrc  <- rd("refined_pristine_validation_source.csv")
 
 elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
@@ -220,6 +222,14 @@ Keyed to the nearest fish farm's own licence, the ordering is the expected one: 
 
 ## 7. A verdict needs a normaliser that works
 
+::: {.callout-important}
+## Half of this revision was wrong, and was reversed in section 8
+The reasoning below is sound for the **bulk** fraction and was applied to the sieved
+fractions too, where it does not belong. Section 8 is the correction. This section is kept
+as it was published, because reversing it silently would leave anyone who took numbers from
+it with no way to find that out.
+:::
+
 **Before.** Every element and fraction with enough aluminium received an enrichment factor
 and a pristine verdict. Manganese, molybdenum and selenium in bulk had them; so did all three
 fractions of copper and zinc.
@@ -258,6 +268,78 @@ that they are grain-size controlled.
 2, 9, 22 and 49%, against 15, 15, 28 and 49% before. Removing the groups whose enrichment
 factor was noise division sharpened the held-out validation instead of blunting it, which is
 what a sound restriction should do.
+
+## 8. The grain-size control is a property of the fraction
+
+**Before.** Section 7 asked whether aluminium predicts the metal, asked it of every fraction,
+and withheld the verdict wherever the answer was no. Every sieved fraction of every element
+answered no, so none of them carried a verdict.
+
+**Now.** The question is asked in **bulk only**. The sieved fractions are classified without
+an enrichment factor, on the two concentration criteria (the offshore P90 and the mixture
+threshold), with the sieve as their grain-size control.
+
+**What forced it.** The test was being applied where its premise does not hold. Aluminium is
+a grain-size control only where the control has to be statistical. A sieved sample was cut to
+below 63 or 20 um before the chemistry started, so the correction had already been made,
+physically, and that is precisely why aluminium has nothing left to track in it. Section 7
+read the resulting near-zero R-squared as a failed normaliser. It is the opposite: it is the
+signature of a fraction that did not need normalising. **"No correction needed" was being
+scored as "the correction failed"**, and the fraction with the better control was the one
+penalised for it.
+
+Better is measurable. Taking each fraction's offshore background and asking how far it moves
+between seas (the largest sea median over the smallest, over seas with at least 50
+measurements), sieving beats aluminium normalisation outright:
+
+| Element | Fraction | raw concentration | after / Al |
+|---|---|---|---|
+| CU | bulk | 9.5x | 4.4x |
+| ZN | bulk | 10.7x | 4.9x |
+| CO | bulk | 3.1x | 5.5x |
+| CU | sieved63 | 2.5x | 2.5x |
+| ZN | sieved63 | 1.7x | 1.5x |
+
+Aluminium roughly halves the spread for bulk copper and zinc and makes cobalt worse, and bulk
+**after** normalisation is still about twice as variable between seas as sieved63 is
+**before** it.
+
+**What moved.**
+
+```{r}
+#| label: sieved-gained
+summ |>
+  filter(cat != "bulk", reliable == TRUE) |>
+  transmute(Element = symbol, Fraction = cat, `measurements` = n,
+            `% classifiable` = pct_classifiable, `% pristine (strict)` = pct_strict) |>
+  arrange(Element, Fraction) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+That is `r format(sum(summ$n_classifiable[summ$cat != "bulk"]), big.mark = ",")` measurements
+gaining a verdict. **No bulk number moved**: the shares in section 7 and in the table below
+are the same before and after. Selenium and molybdenum stay withheld in every fraction, on
+censoring, which this does not touch. Manganese gains a sieved verdict while keeping none in
+bulk, which is the same rule read consistently: in bulk aluminium was the control on offer
+and it does not work, and in a sieved sample the sieve is the control and it does.
+
+**The caveat that comes with it.** Sieving is a national convention rather than a property of
+a sample, so the two fractions are not referenced to the same ocean:
+
+```{r}
+#| label: revision-reference
+pref |>
+  transmute(Fraction = cat, `grain-size control` = gs_control,
+            `reference samples` = n, `median latitude` = paste0(lat_p50, "\u00b0N"),
+            `median depth (m)` = depth_p50, `mainly` = top_seas,
+            `north of 60N` = n_north_60) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+The sieved background cannot be checked in Norwegian waters, because there is almost no
+sieved data there to check it against. That is why the sieved fractions carry the
+conservative verdict only, and why the fish-farm validation stays on bulk: the sieved
+fractions hold no samples within 5 km of a farm.
 
 ## The numbers that moved
 

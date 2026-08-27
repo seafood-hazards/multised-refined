@@ -102,7 +102,10 @@ tbl |>
             `% at background (median ref)` = blank(pct_ef),
             `% at background (P90 ref)` = blank(pct_lt1_p90ref),
             `% pristine (strict)` = blank(pct_strict),
+            # the sieved rows carry a strict verdict without an EF, so their blank EF
+            # columns are a definition rather than a gap
             verdict = case_when(withheld ~ "withheld (below LOQ)",
+                                cat != "bulk" ~ "no EF (sieve-controlled)",
                                 unnormalisable ~ "withheld (Al does not predict it)",
                                 TRUE ~ "")) |>
   kable(format.args = list(big.mark = ","), align = "llrrrrrl")

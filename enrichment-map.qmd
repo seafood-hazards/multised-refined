@@ -27,11 +27,15 @@ page:
   coastal programme that samples around the farms does not report aluminium at any distance
   (see [Pristine Classification](./background-pristine.qmd)).
 
-Only **cobalt, copper and zinc in bulk** carry an enrichment verdict. Select any other
-element or fraction and every site draws grey, because aluminium does not predict that
-element there and dividing by it would not be a grain-size control
-([Regression Normalisation](./background-regression.qmd)); selenium and molybdenum are
-withheld for a different reason, most of their values having fallen below the limit of
+Only **cobalt, copper and zinc in bulk** carry an enrichment verdict, because an enrichment
+factor is an aluminium quantity and bulk is the fraction aluminium controls. Select any other
+element or fraction and every site draws grey. For manganese in bulk that is a withholding:
+aluminium does not predict it and dividing by it would not be a grain-size control
+([Regression Normalisation](./background-regression.qmd)). For the **sieved fractions** it is
+not: they are grain-size controlled by the sieve, so no enrichment factor is defined for them
+and they are judged without one on the
+[Pristine Classification](./background-pristine.qmd) page. Selenium and molybdenum are
+withheld for a third reason, most of their values having fallen below the limit of
 quantification. Concentrations for every group are on the
 [Background Map](./background-map.qmd).
 
@@ -84,9 +88,11 @@ mix_comp   = FileAttachment("data/refined_summary/refined_mixture_components.csv
 thresholds = {
   const m = new Map()
   const put = (k, f) => { const o = m.get(k) ?? {}; f(o); m.set(k, o) }
-  // D4: a group whose aluminium does not predict the metal, or whose values were mostly
-  // below the LOQ, carries no enrichment factor, so it gets no threshold here either and
-  // every site in it draws as unclassifiable. Same rule as the tables.
+  // A group with no enrichment factor gets no threshold here either, and every site in it
+  // draws as unclassifiable. Three ways to get there: aluminium does not predict the metal
+  // (manganese in bulk), most values fell below the LOQ (Se, Mo), or the fraction is
+  // sieved, where the sieve is the grain-size control and no EF is defined. Only the first
+  // two are withholdings; the sieved fractions are judged on the Pristine page instead.
   for (const r of ef_bg)
     put(r.symbol + "|" + r.cat, o => {
       o.no_verdict = (r.withheld === true || r.withheld === "TRUE" ||
@@ -232,6 +238,6 @@ counts = ({
 map_data.length === 0
   ? md`*No data for this selection.*`
   : th.efbg == null
-  ? md`**${selected_element.label}** · ${selected_fraction.label} · **${counts.all}** sites · *no enrichment verdict for this group: aluminium does not predict this element in this fraction, or most of its values fell below the limit of quantification. Concentrations are on the [Background Map](./background-map.qmd).*`
+  ? md`**${selected_element.label}** · ${selected_fraction.label} · **${counts.all}** sites · *no enrichment verdict for this group: it is a sieved fraction, where the sieve is the grain-size control and no enrichment factor is defined (those are judged on the [Pristine Classification](./background-pristine.qmd) page), or aluminium does not predict this element in bulk, or most of its values fell below the limit of quantification. Concentrations are on the [Background Map](./background-map.qmd).*`
   : md`**${selected_element.label}** · ${selected_fraction.label} · **${counts.all}** sites · pristine EF **${counts.ef}** · strict **${counts.strict}** · unclassifiable **${counts.unclass}**`
 ```
