@@ -46,10 +46,11 @@ Cut to below 63 or 20 um, the texture variation is gone, which is precisely why 
 has nothing left to track there. Reading that as a failed normaliser and withholding the
 verdict, as this page did until August 2026, treated "no correction needed" as "the
 correction failed" and penalised the fraction with the better control. It is the better
-control: taking each fraction's offshore background and asking how far it moves between
-seas, sieved63 copper spans 2.5x and zinc 1.7x untouched, against 4.4x and 4.9x for bulk
-**after** aluminium normalisation. So the sieved fractions are classified on the sieve, and
-aluminium is not one of their criteria. See [Method Revisions](./method-revisions.qmd).
+control, and [Method Revisions](./method-revisions.qmd) measures it: taking each fraction's
+offshore background and asking how far it moves between seas, the sieved rows come nearest to
+holding one number across the map, and bulk after aluminium normalisation does not beat them.
+So the sieved fractions are classified on the sieve, and aluminium is not one of their
+criteria.
 
 Two flags are reported, and which criteria they contain depends on the fraction:
 
@@ -87,6 +88,7 @@ cov  <- rd("refined_pristine_coverage.csv")
 covs <- rd("refined_pristine_coverage_source.csv")
 val  <- rd("refined_pristine_validation.csv")
 ref  <- rd("refined_pristine_reference.csv")
+spread <- rd("refined_pristine_sea_spread.csv")
 
 elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
 BLUE <- "#4477AA"; RED <- "#EE6677"
