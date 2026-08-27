@@ -54,6 +54,8 @@ refined_mixture_components.csv
 refined_mixture_hist.csv
 refined_mixture_meta.csv
 refined_pristine_summary.csv
+refined_pristine_reference.csv
+refined_pristine_sea_spread.csv
 refined_pristine_coverage.csv
 refined_pristine_coverage_source.csv
 refined_pristine_validation.csv
