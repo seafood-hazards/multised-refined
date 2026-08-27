@@ -336,8 +336,11 @@ pref |>
   transmute(Fraction = cat, `grain-size control` = gs_control,
             `reference samples` = n, `median latitude` = paste0(lat_p50, "\u00b0N"),
             `median depth (m)` = depth_p50, `mainly` = top_seas,
-            `north of 60N` = n_north_60) |>
-  kable(format.args = list(big.mark = ","))
+            n_north) |>
+  kable(format.args = list(big.mark = ","),
+        col.names = c("Fraction", "grain-size control", "reference samples",
+                      "median latitude", "median depth (m)", "mainly",
+                      sprintf("north of %gN", pref$north_cut_deg[1])))
 ```
 
 The sieved background cannot be checked in Norwegian waters, because there is almost no
