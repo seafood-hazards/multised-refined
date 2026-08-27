@@ -156,13 +156,15 @@ Classifiable is at or near 100% throughout, which is the whole point: no alumini
 required, so nothing is withdrawn for lacking it. Contrast the bulk column above, where
 copper and zinc lose eight samples in nine.
 
-Manganese appears here and not in bulk. That is consistent rather than odd: its bulk verdict
-is withheld because aluminium never carried it (manganese is redox-mobile rather than
-clay-borne, so it is not a normalisation that failed but a normaliser that was never
-appropriate), and in a sieved sample the sieve supplies the grain-size control that
-aluminium was being asked for. Its redox mobility is still a caveat on reading the number,
-but it is not a grain-size question. Selenium and molybdenum stay withheld in every
-fraction, on censoring rather than on normalisation.
+Manganese appears here and not in bulk. That is consistent rather than odd. Its bulk verdict
+is withheld because aluminium never carried it: manganese is not clay-borne, so aluminium
+was never an appropriate normaliser for it rather than a failed one. **That is a fact about
+aluminium, and it does not travel to a fraction that uses none.** In a sieved sample the
+sieve supplies the grain-size control aluminium was being asked for, and the two criteria
+that follow are concentration comparisons against manganese's own offshore population, for
+its own fraction. Sieved manganese therefore stands on exactly the footing sieved copper and
+zinc do: the caveat in the next section applies to it, and no extra one does. Selenium and
+molybdenum stay withheld in every fraction, on censoring rather than on normalisation.
 
 ### The standing caveat: it is not the same sea
 
