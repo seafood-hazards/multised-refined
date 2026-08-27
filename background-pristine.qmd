@@ -178,9 +178,12 @@ ref |>
   transmute(Fraction = cat, `grain-size control` = gs_control,
             `reference samples` = n, `median latitude` = paste0(lat_p50, "\u00b0N"),
             `median depth (m)` = depth_p50, `mainly` = top_seas,
-            `north of 60N` = n_north_60,
-            `within 5 km of a farm` = n_farm_lt5km) |>
-  kable(format.args = list(big.mark = ","))
+            n_north, n_farm_near) |>
+  kable(format.args = list(big.mark = ","),
+        col.names = c("Fraction", "grain-size control", "reference samples",
+                      "median latitude", "median depth (m)", "mainly",
+                      sprintf("north of %gN", ref$north_cut_deg[1]),
+                      sprintf("within %g km of a farm", ref$farm_near_km[1])))
 ```
 
 ::: {.callout-warning}
@@ -188,7 +191,7 @@ ref |>
 
 The bulk reference is the deep Norwegian and Barents Sea. The sieved reference is the
 southern North Sea and the Baltic, on a shallow shelf off an industrialised continental
-coast. The `north of 60N` column is why this cannot be repaired by re-cutting the
+coast. The far-north column is why this cannot be repaired by re-cutting the
 reference: there is almost no sieved data up there to build a northern one from, so the
 sieved background **cannot be checked in Norwegian waters**.
 
