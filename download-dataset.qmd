@@ -70,10 +70,12 @@ so the file can be used without reproducing them.
 ::: {.callout-important}
 ## The verdict columns changed in v0.9.0 and again in v0.9.5
 
-Verdicts computed before v0.9.0 will not reproduce from this file. Since v0.9.5 the
-enrichment and pristine columns exist for **cobalt, copper and zinc in the bulk fraction
-only**: no other element or fraction has a normaliser that predicts it, so no verdict is
-issued. The methods, what forced each change and the size of every shift are set out on
+Verdicts computed before v0.9.0 will not reproduce from this file. The **enrichment**
+columns exist for cobalt, copper and zinc in the bulk fraction only, aluminium predicting
+no other element there and an enrichment factor being undefined off the fraction aluminium
+controls. The **pristine** columns go wider: since v0.9.6 the sieved fractions carry
+`pristine_strict`, judged on the sieve and on the two concentration criteria, so a blank
+`pristine_ef` beside a filled `pristine_strict` is a definition rather than a gap. The methods, what forced each change and the size of every shift are set out on
 [Method Revisions](./method-revisions.qmd). `ef` and `pristine_ef` keep their original
 definitions, so an earlier download remains a subset of this one rather than contradicting
 it, and `background_p90` and `background_mixture` use no aluminium and are unchanged for

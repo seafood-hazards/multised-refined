@@ -27,12 +27,18 @@ as well in absence of EF".
 ::: {.callout-important}
 ## This page issues no verdict, on purpose
 
-Igeo is reported **alongside** the pristine verdicts, not folded into them. The verdicts stay
-on EF.
+Igeo is reported **alongside** the pristine verdicts, not folded into them.
 
-Reach is the argument for promoting it. The texture confounding measured further down is the
-argument against, and in bulk it is strong enough (cobalt correlates with the mud fraction at
-rho 0.70) that a verdict built on Igeo would be partly a verdict about grain size.
+Reach is the argument for promoting it, and the argument against differs by fraction. In
+**bulk**, the texture confounding measured further down is strong enough (cobalt correlates
+with the mud fraction at rho 0.70) that a verdict built on Igeo would be partly a verdict
+about grain size. That is why the bulk verdict stays on the enrichment factor.
+
+In the **sieved** fractions that objection does not apply, since the sieve fixed the texture
+before the chemistry. The reason Igeo is not promoted there is different: the comparison it
+would make, a concentration against the offshore population of the same fraction, is already
+made inside the strict verdict by the offshore-P90 criterion. Promoting Igeo as well would
+add a second verdict on a different threshold rather than new information.
 
 Reporting the index without promoting it keeps the coverage visible to EFSA, who asked for
 Igeo precisely where EF is absent, without quietly changing what "pristine" means here.

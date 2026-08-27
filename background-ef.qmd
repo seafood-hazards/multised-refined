@@ -107,7 +107,7 @@ pristine-candidate pool.
 
 ```{r}
 #| label: class-fig
-#| fig-cap: "EF class shares for the three groups that carry an enrichment factor. Between 43 and 48% of each sits at or below the local background, and the remainder is mostly in the 1-2 band. The other elements and every sieved fraction are absent because aluminium does not predict them."
+#| fig-cap: "EF class shares for the three groups that carry an enrichment factor. Between 43 and 48% of each sits at or below the local background, and the remainder is mostly in the 1-2 band. Manganese, molybdenum and selenium in bulk are absent because aluminium does not predict them; the sieved fractions are absent because no enrichment factor is defined for them, the sieve being their grain-size control."
 #| fig-width: 8
 #| fig-height: 3.6
 efd |>
@@ -123,8 +123,10 @@ efd |>
   labs(x = "% of samples", y = NULL, fill = "EF")
 ```
 
-The background reference and the EF summary per element and fraction. Groups with no verdict
-keep their row and their n, so it is visible that they exist and why they are blank.
+The background reference and the EF summary per element and fraction. Groups with no
+enrichment factor keep their row and their n, so it is visible that they exist and why they
+are blank. Blank here does not mean unjudged: the sieved rows carry a pristine verdict built
+without an enrichment factor, on [Pristine Classification](./background-pristine.qmd).
 
 ```{r}
 #| label: summary-table
@@ -264,8 +266,10 @@ width of the answer. Aluminium is measured for only a minority of bulk samples a
 of those sit on the adopted basis, so EF covers that subset; iodine is too sparse for any of
 this, and **selenium and molybdenum carry no verdict at all**, because most of their
 measurements fell below the limit of quantification and were removed upstream (see
-[Method Revisions](./method-revisions.qmd)). Nor do manganese or any sieved fraction, because
-aluminium does not predict them. What is left is cobalt, copper and zinc in bulk: three
-groups and about 11,300 measurements, from which every enrichment number on this site now
-comes. Read with the three background pages, which set the reference EF builds on.
+[Method Revisions](./method-revisions.qmd)). Nor does manganese in bulk, because aluminium does
+not predict it. What is left for **this page** is cobalt, copper and zinc in bulk: three
+groups and about 11,300 measurements, from which every enrichment number on this site
+comes. That is a limit on the enrichment factor, not on the verdict: the sieved fractions
+are judged without one, on the
+[Pristine Classification](./background-pristine.qmd) page. Read with the three background pages, which set the reference EF builds on.
 :::

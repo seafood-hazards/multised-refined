@@ -17,7 +17,12 @@ fraction:
 - **metal / Fe** (iron, a secondary carrier, shown for comparison only: see the note below),
 - **metal / mud** (the value per unit mud fraction, `value / (fines / 100)`), computed
   only where the sample is at least `r 10`% mud, since dividing a sandy sample by a tiny
-  mud fraction is unstable.
+  mud fraction is unstable, and **in bulk sediment only**. The mud fraction is recorded on
+  the subsample and describes the **parent sediment**, not the aliquot that was analysed,
+  so on a sieved fraction this would divide a concentration by the mud content of
+  different material. It used to, and the resulting sieved column was inflated by roughly
+  the reciprocal of the parent's mud content. Scaling a below-63 um aliquot to 100% mud is
+  in any case the identity, and below 20 um the quantity is not defined at all.
 
 For each we compare the offshore (> 10 km) 90th percentile to the global one, exactly as
 the raw page did, so the **shift toward 1 shows how much of the coastal signal was grain
@@ -123,12 +128,18 @@ twelfth of anything in a sieved fraction. A normalised background is only as goo
 normaliser's grip on that particular metal:
 [Regression Normalisation](./background-regression.qmd) has the numbers.
 
+Read that as a verdict on **these columns**, not on the sieved data. The near-zero sieved
+figures are the sieve having already removed the texture the normaliser would otherwise
+track, so the honest conclusion is that a sieved fraction does not need this page: its
+background is the raw one on [Global Background](./background.qmd), and that is the number
+its pristine verdict is built from. The normalised sieved columns below are diagnostics.
+
 ::: {.callout-note}
 Normalising helps but does not settle the background: it trades the grain-size assumption
 for a normaliser assumption. Aluminium is the most defensible single choice, and the only
 one carried into the enrichment pages, but its bulk coverage is only about a third of the
 samples; the mud basis is the most direct grain-size
-measure but excludes sandy samples and is unstable at low mud. Read alongside the raw
+measure but excludes sandy samples, is unstable at low mud, and exists for bulk only. Read alongside the raw
 [Global Background](./background.qmd) and the [Pressure-Based Background](./background-pressure.qmd)
 pages, not on its own. Iodine and selenium remain too sparse to normalise reliably.
 :::
