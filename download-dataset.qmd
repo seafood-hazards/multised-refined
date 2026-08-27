@@ -85,18 +85,25 @@ controlled and therefore needs aluminium. Where aluminium is missing the sample 
 **unclassified** (`classifiable` FALSE, both pristine columns empty) rather than guessed.
 Two further restrictions now apply:
 
-- `al_basis` records the aluminium measurement basis inferred for the subsample. Only
-  samples on the basis their fraction adopted receive a verdict; the rest are unclassified
-  for the same reason a sample with no aluminium is.
+- `al_basis` records the aluminium measurement basis inferred for the subsample. In bulk,
+  only samples on the basis their fraction adopted receive a verdict; the rest are
+  unclassified for the same reason a sample with no aluminium is. It does not gate the
+  sieved fractions, which use no aluminium.
 - **Selenium and molybdenum carry no verdict at all.** Most of their measurements fell
   below the limit of quantification and were removed upstream, so what survives is an upper
   tail rather than a background. Their concentrations are still published.
-- **Nor does any group where aluminium does not predict the element.** An enrichment factor
-  is a grain-size control only if the normaliser carries the metal, and measured by
-  regression it does so for cobalt, copper and zinc in bulk (R-squared 0.46 to 0.58) and
-  nowhere else: manganese in bulk and every sieved fraction sit at 0.10 or below. Those
-  groups keep their concentrations and lose only the verdict. See
-  [Regression Normalisation](./background-regression.qmd).
+- **Nor does manganese in bulk.** An enrichment factor is a grain-size control only if the
+  normaliser carries the metal, and measured by regression aluminium does so for cobalt,
+  copper and zinc in bulk (R-squared 0.46 to 0.58) and for nothing else. Manganese in bulk
+  keeps its concentrations and loses the verdict, because aluminium was the control on offer
+  and nothing replaces it. See [Regression Normalisation](./background-regression.qmd).
+- **The sieved fractions carry `pristine_strict` but not `pristine_ef`.** They are
+  grain-size controlled by the sieve rather than by aluminium, so no enrichment factor is
+  defined for them and `ef`, `pristine_ef` and `bg_ratio_al` are empty by definition rather
+  than for want of data. `pristine_strict` there is the two concentration criteria, the
+  offshore P90 and the mixture threshold. Read those verdicts against the sieved fractions'
+  own offshore reference, which is the southern North Sea rather than the Norwegian Sea:
+  see [Pristine Classification](./background-pristine.qmd).
 
 - `pristine_ef`: the permissive rule, EF < 1, where EF is the element/Al ratio divided by
   the offshore background ratio. This is the rule an EFSA submission would use.

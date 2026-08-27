@@ -9,10 +9,11 @@ th { white-space: nowrap; }
 
 This page draws the background estimates together into a per-measurement **pristine**
 (at or below background) verdict, per element and fraction (a sample can be pristine for
-one element and not another). It combines three "at/below background" criteria from the
-earlier pages: **EF < 1** (the [Enrichment Factor](./background-ef.qmd), grain-size
-controlled), **below the [distribution-mixture threshold](./background-mixture.qmd)**, and
-**below the offshore P90** ([Global Background](./background.qmd)).
+one element and not another). It draws on three "at/below background" criteria from the earlier
+pages: **EF < 1** (the [Enrichment Factor](./background-ef.qmd)), **below the
+[distribution-mixture threshold](./background-mixture.qmd)**, and **below the offshore P90**
+([Global Background](./background.qmd)). Which of the three apply depends on how the
+fraction's grain size is controlled, and that is the subject of the next two sections.
 
 Every one of these criteria is estimated with **no aquaculture information**, so the
 pristine verdict is independent of the pressure it is meant to reveal. The aquaculture
@@ -20,25 +21,45 @@ sites enter only afterwards, as an **evaluation**: the closing section checks wh
 pristine fraction falls as sediments approach the cages. That check turns out to be a sanity
 test rather than a validation, for reasons set out there.
 
-Only **grain-size-controlled** verdicts are trusted. A raw-concentration version was tried
-and rejected: sandy near-cage sediment slips under a concentration threshold regardless of
-pressure, and (see below) aluminium is missing exactly where pressure is highest, so a
-concentration flag validated **backwards**. Where aluminium (hence EF) is absent, a sample
-is therefore left **unclassified** rather than guessed.
+Only **grain-size-controlled** verdicts are trusted. In bulk, a raw-concentration version was
+tried and rejected: sandy near-cage sediment slips under a concentration threshold regardless
+of pressure, and (see below) aluminium is missing exactly where pressure is highest, so a
+concentration flag validated **backwards**. Where a bulk sample has no aluminium, and hence
+no EF, it is therefore left **unclassified** rather than guessed.
 
-That principle now cuts further than it used to. A verdict also requires that aluminium
-**predict** the element, since dividing by a variable uncorrelated with the metal is not a
-grain-size control however it is dressed up. Measured by regression, aluminium predicts
-cobalt, copper and zinc in bulk and nothing else, so those three groups are the only ones
-classified at all ([Regression Normalisation](./background-regression.qmd)). Manganese, and
-every sieved fraction, are now unclassified for the same reason selenium and molybdenum are:
-the reference behind the verdict does not hold up.
+That rejection is about **uncontrolled** concentrations, and it is worth being precise about
+why it does not extend to the sieved fractions. The objection to a concentration threshold is
+that grain size confounds it. In a sieved sample grain size has already been fixed, by the
+sieve, so the same threshold is no longer measuring texture. The two concentration criteria
+are untrustworthy in bulk and sound on a sieved fraction for one and the same reason: what
+makes them unsafe is missing there.
 
-Two flags are reported:
+What counts as grain-size control, though, depends on the fraction, and this page used to
+get that wrong. In **bulk** the control is statistical, and it has to be earned: dividing by
+a variable uncorrelated with the metal is not a control however it is dressed up. Measured by
+regression, aluminium predicts cobalt, copper and zinc in bulk and nothing else, so manganese
+in bulk is unclassified for the same reason selenium and molybdenum are
+([Regression Normalisation](./background-regression.qmd)).
 
-- **EF rule** (permissive, EFSA-preferred): pristine where EF < 1.
-- **Strict rule** (conservative): EF < 1 **plus two raw-concentration screens**, the
-  mixture threshold and the offshore P90.
+In a **sieved** sample the control is physical and was applied before the chemistry started.
+Cut to below 63 or 20 um, the texture variation is gone, which is precisely why aluminium
+has nothing left to track there. Reading that as a failed normaliser and withholding the
+verdict, as this page did until August 2026, treated "no correction needed" as "the
+correction failed" and penalised the fraction with the better control. It is the better
+control: taking each fraction's offshore background and asking how far it moves between
+seas, sieved63 copper spans 2.5x and zinc 1.7x untouched, against 4.4x and 4.9x for bulk
+**after** aluminium normalisation. So the sieved fractions are classified on the sieve, and
+aluminium is not one of their criteria. See [Method Revisions](./method-revisions.qmd).
+
+Two flags are reported, and which criteria they contain depends on the fraction:
+
+- **EF rule** (permissive, EFSA-preferred): pristine where EF < 1. Bulk only, since no
+  enrichment factor is defined where aluminium is not the normaliser.
+- **Strict rule** (conservative): every criterion that applies to the fraction agrees. In
+  bulk that is EF < 1 **plus two raw-concentration screens**, the mixture threshold and the
+  offshore P90. In the sieved fractions it is those two screens, resting on the sieve for
+  their grain-size control. The sieved fractions carry the strict rule only, which is the
+  right way round while their background cannot be checked in the north (see below).
 
 The three criteria are not peers, and the strict rule is not three independent votes. Only
 EF < 1 is grain-size controlled; the other two are screens on the raw concentration, the
@@ -65,6 +86,7 @@ summ <- rd("refined_pristine_summary.csv")
 cov  <- rd("refined_pristine_coverage.csv")
 covs <- rd("refined_pristine_coverage_source.csv")
 val  <- rd("refined_pristine_validation.csv")
+ref  <- rd("refined_pristine_reference.csv")
 
 elem_levels <- c("CO", "CU", "I", "MN", "MO", "SE", "ZN")
 BLUE <- "#4477AA"; RED <- "#EE6677"
@@ -77,12 +99,13 @@ Among the samples that can be classified (those with aluminium), the share flagg
 under each rule, bulk. Both rules rest on EF < 1, whose reference is now computed within a
 single aluminium measurement basis (see the [Enrichment Factor](./background-ef.qmd) page).
 That is why the **classifiable** column is low: a sample off its fraction's basis is
-withdrawn rather than misjudged. Only **cobalt, copper and zinc in bulk** appear at all.
-Selenium and molybdenum are withheld because most of their measurements fell below the limit
-of quantification and were removed upstream; manganese and every sieved fraction are withheld
-because aluminium does not predict them ([Method Revisions](./method-revisions.qmd)). For
-copper and zinc the classifiable column is the further catch: only about one sample in nine
-carries usable aluminium at all.
+withdrawn rather than misjudged. Only **cobalt, copper and zinc** appear in bulk. Selenium
+and molybdenum are withheld because most of their measurements fell below the limit of
+quantification and were removed upstream; manganese in bulk is withheld because aluminium
+does not predict it ([Method Revisions](./method-revisions.qmd)). For copper and zinc the
+classifiable column is the further catch: only about one sample in nine carries usable
+aluminium at all. The sieved fractions, which need none of it, are in their own section
+below.
 
 ```{r}
 #| label: summary-table
@@ -111,15 +134,75 @@ summ |>
   labs(x = "% of classifiable samples pristine", y = NULL)
 ```
 
+## The sieved fractions, judged on the sieve
+
+These carry the strict rule only. Every criterion in it is a concentration screen, and both
+screens stand on the sieve for their grain-size control rather than on aluminium.
+
+```{r}
+#| label: sieved-table
+summ |>
+  filter(cat != "bulk", reliable == TRUE) |>
+  mutate(symbol = factor(symbol, levels = elem_levels)) |>
+  transmute(Element = symbol, Fraction = cat, `samples` = n,
+            `% classifiable` = pct_classifiable, `pristine (strict)` = pct_strict) |>
+  arrange(Element, Fraction) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+Classifiable is at or near 100% throughout, which is the whole point: no aluminium is
+required, so nothing is withdrawn for lacking it. Contrast the bulk column above, where
+copper and zinc lose eight samples in nine.
+
+Manganese appears here and not in bulk. That is consistent rather than odd: its bulk verdict
+is withheld because aluminium never carried it (manganese is redox-mobile rather than
+clay-borne, so it is not a normalisation that failed but a normaliser that was never
+appropriate), and in a sieved sample the sieve supplies the grain-size control that
+aluminium was being asked for. Its redox mobility is still a caveat on reading the number,
+but it is not a grain-size question. Selenium and molybdenum stay withheld in every
+fraction, on censoring rather than on normalisation.
+
+### The standing caveat: it is not the same sea
+
+Sieving is a national convention, not a property of a sample. Norway reports bulk and
+Germany, Belgium and the Netherlands sieve, so "offshore, more than 10 km out" resolves to a
+different ocean in each fraction:
+
+```{r}
+#| label: reference-table
+ref |>
+  transmute(Fraction = cat, `grain-size control` = gs_control,
+            `reference samples` = n, `median latitude` = paste0(lat_p50, "\u00b0N"),
+            `median depth (m)` = depth_p50, `mainly` = top_seas,
+            `north of 60N` = n_north_60,
+            `within 5 km of a farm` = n_farm_lt5km) |>
+  kable(format.args = list(big.mark = ","))
+```
+
+::: {.callout-warning}
+## Read the sieved verdicts against their own sea, not against Norway
+
+The bulk reference is the deep Norwegian and Barents Sea. The sieved reference is the
+southern North Sea and the Baltic, on a shallow shelf off an industrialised continental
+coast. The `north of 60N` column is why this cannot be repaired by re-cutting the
+reference: there is almost no sieved data up there to build a northern one from, so the
+sieved background **cannot be checked in Norwegian waters**.
+
+The last column is the matching limit on the evaluation below. The sieved fractions hold no
+samples within 5 km of a Norwegian fish farm at all, so the distance check that follows
+cannot be run on them and stays on bulk.
+:::
+
 ## The data gap: aluminium is missing where the farms are
 
-This is the key result, and a limitation for the aquaculture question. Aluminium coverage
-collapses toward the cages: the sediments most in need of a pristine-or-not verdict are the
-ones least able to receive one.
+This is the key result for the bulk fraction, and a limitation for the aquaculture question.
+Aluminium coverage collapses toward the cages: the bulk sediments most in need of a
+pristine-or-not verdict are the ones least able to receive one. It is a gap in the
+aluminium, so it does not touch the sieved fractions, which are classified without it.
 
 ```{r}
 #| label: coverage-fig
-#| fig-cap: "Percentage of samples that can be classified, by distance to the nearest fish farm. The figure covers cobalt, copper and zinc in bulk, the only groups that carry a verdict, so it measures the aluminium gap alone."
+#| fig-cap: "Percentage of samples that can be classified, by distance to the nearest fish farm. The figure covers cobalt, copper and zinc in bulk, so it measures the aluminium gap alone. The sieved fractions are excluded because they need no aluminium and hold no samples within 5 km of a farm, so they would move every denominator without adding a case."
 #| fig-width: 7.5
 #| fig-height: 2.8
 cov |>
